@@ -1,0 +1,103 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #333; }
+
+.navbar { background: #1a237e; color: #fff; display: flex; align-items: center; padding: 0 20px; height: 56px; }
+.brand { font-size: 1.3em; font-weight: bold; margin-right: 40px; }
+.nav-links { display: flex; gap: 5px; }
+.nav-link { color: #bbdefb; text-decoration: none; padding: 8px 16px; border-radius: 4px; transition: .2s; }
+.nav-link:hover, .nav-link.active { background: rgba(255,255,255,.15); color: #fff; }
+
+.section { padding: 20px; }
+.container { max-width: 1100px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+
+/* Invoice */
+.invoice-container { max-width: 900px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.invoice-header { display: flex; justify-content: space-between; border-bottom: 3px solid #1a237e; padding-bottom: 15px; margin-bottom: 20px; }
+.company-info h1 { color: #1a237e; font-size: 1.6em; }
+.company-info p { font-size: .85em; color: #555; }
+.invoice-meta { text-align: right; }
+.invoice-meta h2 { color: #1a237e; margin-bottom: 10px; }
+.meta-row { margin: 5px 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.meta-row label { font-weight: 600; font-size: .9em; }
+.meta-row input { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: .9em; width: 150px; }
+
+.customer-section { margin-bottom: 20px; padding: 12px; background: #f5f5f5; border-radius: 6px; }
+.customer-details { font-size: .85em; color: #555; margin-top: 8px; }
+
+.form-row { display: flex; align-items: center; gap: 10px; margin: 5px 0; flex-wrap: wrap; }
+.form-row label { font-weight: 600; font-size: .9em; min-width: 80px; }
+.form-row select, .form-row input[type="date"] { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: .9em; }
+.form-row select { min-width: 250px; }
+
+/* Items Table */
+.items-section { margin-bottom: 20px; }
+#itemsTable { width: 100%; border-collapse: collapse; }
+#itemsTable th { background: #1a237e; color: #fff; padding: 8px 6px; font-size: .85em; text-align: left; }
+#itemsTable td { padding: 6px; border-bottom: 1px solid #eee; font-size: .85em; }
+#itemsTable select, #itemsTable input { padding: 4px 6px; border: 1px solid #ccc; border-radius: 3px; font-size: .85em; width: 100%; }
+#itemsTable input[type="number"] { width: 70px; }
+.btn-remove { background: #e53935; color: #fff; border: none; padding: 4px 10px; border-radius: 3px; cursor: pointer; font-size: .8em; }
+
+/* Totals */
+.totals-section { margin-left: auto; width: 300px; margin-bottom: 20px; }
+.total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: .95em; }
+.total-row.grand { font-weight: bold; font-size: 1.1em; border-top: 2px solid #1a237e; padding-top: 10px; color: #1a237e; }
+
+/* Buttons */
+.btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: .9em; transition: .2s; }
+.btn-primary { background: #1a237e; color: #fff; }
+.btn-primary:hover { background: #283593; }
+.btn-success { background: #2e7d32; color: #fff; }
+.btn-success:hover { background: #388e3c; }
+.btn-secondary { background: #757575; color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: .8em; background: #1a237e; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
+.btn-add { margin-top: 8px; background: #e8eaf6; color: #1a237e; border: 1px dashed #1a237e; }
+.actions { display: flex; gap: 10px; justify-content: center; }
+
+/* Data Tables */
+.data-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.data-table th { background: #e8eaf6; padding: 10px; text-align: left; font-size: .85em; }
+.data-table td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: .85em; }
+.data-table tr:hover { background: #f5f5f5; }
+
+/* Filters */
+.filters { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px; padding: 12px; background: #f5f5f5; border-radius: 6px; }
+
+/* Modal */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-content { background: #fff; border-radius: 8px; padding: 24px; width: 400px; max-height: 90vh; overflow-y: auto; position: relative; }
+.modal-lg { width: 850px; }
+.close { position: absolute; top: 10px; right: 15px; font-size: 1.5em; cursor: pointer; color: #999; }
+.form-group { margin: 12px 0; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: .9em; }
+.form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+
+/* Print invoice in modal */
+.print-invoice { padding: 20px; }
+.print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 3px solid #1a237e; padding-bottom: 10px; margin-bottom: 15px; }
+.print-invoice .pi-header h2 { color: #1a237e; }
+.print-invoice .pi-customer { background: #f5f5f5; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: .9em; }
+.print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+.print-invoice th { background: #1a237e; color: #fff; padding: 6px 8px; font-size: .8em; text-align: left; }
+.print-invoice td { padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: .85em; }
+.print-invoice .pi-totals { margin-left: auto; width: 250px; }
+.print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 3px 0; }
+.print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 6px; }
+
+@media print {
+  body * { visibility: hidden; }
+  #invoicePrintArea, #invoicePrintArea * { visibility: visible; }
+  #invoicePrintArea { position: absolute; left: 0; top: 0; width: 100%; }
+}
+
+/* Login */
+.login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1a237e 0%, #283593 100%); }
+.login-box { background: #fff; border-radius: 12px; padding: 40px; width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,.2); text-align: center; }
+.login-box h1 { color: #1a237e; margin-bottom: 5px; font-size: 1.5em; }
+.login-subtitle { color: #777; font-size: .9em; margin-bottom: 25px; }
+.login-box .form-group { text-align: left; }
+.login-box .form-group input { margin-bottom: 5px; }
+.login-error { color: #e53935; font-size: .85em; margin: 8px 0; }
+.btn-block { width: 100%; padding: 10px; font-size: 1em; margin-top: 10px; }
+.nav-logout { color: #ffcdd2 !important; margin-left: auto; }

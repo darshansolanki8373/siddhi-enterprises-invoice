@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Siddhi Enterprises - Invoice App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-box">
+      <h1>🏪 Siddhi Enterprises</h1>
+      <p class="login-subtitle">Invoice Management System</p>
+      <div class="form-group"><label>Username:</label><input type="text" id="loginUser" placeholder="Enter username"></div>
+      <div class="form-group"><label>Password:</label><input type="password" id="loginPass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="loginError" class="login-error" style="display:none"></div>
+      <button class="btn btn-primary btn-block" onclick="doLogin()">🔐 Login</button>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until login) -->
+  <div id="mainApp" style="display:none">
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="brand">🏪 Siddhi Enterprises</div>
+    <div class="nav-links">
+      <a href="#" onclick="showSection('invoice')" class="nav-link active" id="nav-invoice">New Invoice</a>
+      <a href="#" onclick="showSection('history')" class="nav-link" id="nav-history">Invoice History</a>
+      <a href="#" onclick="showSection('products')" class="nav-link" id="nav-products">Products</a>
+      <a href="#" onclick="showSection('customers')" class="nav-link" id="nav-customers">Customers</a>
+      <a href="#" onclick="doLogout()" class="nav-link nav-logout">🚪 Logout</a>
+    </div>
+  </nav>
+
+  <!-- ═══ NEW INVOICE SECTION ═══ -->
+  <section id="section-invoice" class="section">
+    <div class="invoice-container">
+      <!-- Header -->
+      <div class="invoice-header">
+        <div class="company-info">
+          <h1>Siddhi Enterprises</h1>
+          <p>Juna Mondha, Beed - 431122</p>
+          <p>GSTIN: 27CKWPS3584D1ZF</p>
+          <p>FSSAI No: 11515047000269</p>
+          <p>Mob: 8275223287 / 9422911445</p>
+        </div>
+        <div class="invoice-meta">
+          <h2>TAX INVOICE</h2>
+          <div class="meta-row">
+            <label>Invoice No:</label>
+            <input type="text" id="invoiceNo" readonly>
+          </div>
+          <div class="meta-row">
+            <label>Date:</label>
+            <input type="date" id="invoiceDate">
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer Selection -->
+      <div class="customer-section">
+        <div class="form-row">
+          <label>Customer:</label>
+          <select id="customerSelect" onchange="onCustomerChange()">
+            <option value="">-- Select Customer --</option>
+          </select>
+          <button class="btn btn-sm" onclick="showAddCustomerModal()">+ New</button>
+        </div>
+        <div id="customerDetails" class="customer-details" style="display:none">
+          <span id="custAddr"></span> | <span id="custMob"></span> | <span>GST: <span id="custGst"></span></span>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="items-section">
+        <table id="itemsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product</th>
+              <th>HSN</th>
+              <th>Pkg</th>
+              <th>Qty</th>
+              <th>Rate (₹)</th>
+              <th>Amount (₹)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+        <button class="btn btn-add" onclick="addItemRow()">+ Add Item</button>
+      </div>
+
+      <!-- Totals -->
+      <div class="totals-section">
+        <div class="total-row"><span>Subtotal:</span><span id="subtotal">₹0.00</span></div>
+        <div class="total-row"><span>CGST (2.5%):</span><span id="cgstTotal">₹0.00</span></div>
+        <div class="total-row"><span>SGST (2.5%):</span><span id="sgstTotal">₹0.00</span></div>
+        <div class="total-row grand"><span>Grand Total:</span><span id="grandTotal">₹0.00</span></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn btn-primary" onclick="saveInvoice()">💾 Save Invoice</button>
+        <button class="btn btn-success" onclick="saveAndDownload()">📥 Save & Download PDF</button>
+        <button class="btn btn-secondary" onclick="resetInvoice()">🔄 New Invoice</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ INVOICE HISTORY SECTION ═══ -->
+  <section id="section-history" class="section" style="display:none">
+    <div class="container">
+      <h2>Invoice History</h2>
+      <div class="filters">
+        <div class="form-row">
+          <label>Customer:</label>
+          <select id="filterCustomer"><option value="">All</option></select>
+        </div>
+        <div class="form-row">
+          <label>From:</label>
+          <input type="date" id="filterFrom">
+        </div>
+        <div class="form-row">
+          <label>To:</label>
+          <input type="date" id="filterTo">
+        </div>
+        <button class="btn btn-primary" onclick="loadInvoices()">🔍 Search</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Inv #</th><th>Date</th><th>Customer</th><th>Total (₹)</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="invoicesList"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ PRODUCTS SECTION ═══ -->
+  <section id="section-products" class="section" style="display:none">
+    <div class="container">
+      <h2>Products <button class="btn btn-sm" onclick="showAddProductModal()">+ Add Product</button></h2>
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>HSN</th><th>Packaging</th><th>Price (₹)</th><th>Actions</th></tr></thead>
+        <tbody id="productsList"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ CUSTOMERS SECTION ═══ -->
+  <section id="section-customers" class="section" style="display:none">
+    <div class="container">
+      <h2>Customers <button class="btn btn-sm" onclick="showAddCustomerModal()">+ Add Customer</button></h2>
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Address</th><th>Mobile</th><th>GST No</th><th>Actions</th></tr></thead>
+        <tbody id="customersList"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ VIEW INVOICE MODAL ═══ -->
+  <div id="viewInvoiceModal" class="modal" style="display:none">
+    <div class="modal-content modal-lg">
+      <span class="close" onclick="closeModal('viewInvoiceModal')">&times;</span>
+      <div id="invoicePrintArea"></div>
+      <div class="modal-actions">
+        <button class="btn btn-success" onclick="downloadCurrentInvoice()">📥 Download PDF</button>
+        <button class="btn btn-secondary" onclick="closeModal('viewInvoiceModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ADD PRODUCT MODAL ═══ -->
+  <div id="productModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('productModal')">&times;</span>
+      <h3 id="productModalTitle">Add Product</h3>
+      <input type="hidden" id="editProductId">
+      <div class="form-group"><label>Name:</label><input type="text" id="prodName"></div>
+      <div class="form-group"><label>HSN Code:</label><input type="text" id="prodHsn"></div>
+      <div class="form-group"><label>Packaging:</label><input type="text" id="prodPkg"></div>
+      <div class="form-group"><label>Price (₹):</label><input type="number" id="prodPrice" step="0.01"></div>
+      <button class="btn btn-primary" onclick="saveProduct()">Save</button>
+    </div>
+  </div>
+
+  <!-- ═══ ADD CUSTOMER MODAL ═══ -->
+  <div id="customerModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('customerModal')">&times;</span>
+      <h3 id="customerModalTitle">Add Customer</h3>
+      <input type="hidden" id="editCustomerId">
+      <div class="form-group"><label>Name:</label><input type="text" id="custName"></div>
+      <div class="form-group"><label>Address:</label><input type="text" id="custAddress"></div>
+      <div class="form-group"><label>Mobile No:</label><input type="text" id="custMobNo"></div>
+      <div class="form-group"><label>GST No:</label><input type="text" id="custGstNo"></div>
+      <button class="btn btn-primary" onclick="saveCustomer()">Save</button>
+    </div>
+  </div>
+
+  </div><!-- end mainApp -->
+
+  <script src="app.js"></script>
+</body>
+</html>

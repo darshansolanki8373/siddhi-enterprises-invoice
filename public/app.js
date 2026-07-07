@@ -1,0 +1,449 @@
+const API = '';
+let products = [];
+let customers = [];
+let currentViewInvoiceId = null;
+
+// ── Auth ──
+function getToken() { return sessionStorage.getItem('token'); }
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() };
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if (!username || !password) { errEl.textContent = 'Enter username and password'; errEl.style.display = 'block'; return; }
+  try {
+    const res = await fetch(API + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    sessionStorage.setItem('token', data.token);
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    await initApp();
+  } catch (e) {
+    errEl.textContent = 'Connection error'; errEl.style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('token');
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginPass').value = '';
+}
+
+async function initApp() {
+  await Promise.all([loadProducts(), loadCustomers()]);
+  await initInvoice();
+  document.getElementById('itemsBody').innerHTML = '';
+  addItemRow();
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  if (getToken()) {
+    // Try to use existing token
+    fetch(API + '/api/invoices/next-number', { headers: authHeaders() })
+      .then(r => { if (r.ok) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; initApp(); } else { doLogout(); } })
+      .catch(() => doLogout());
+  }
+});
+
+// ── Navigation ──
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('section-' + name).style.display = 'block';
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'history') { populateFilterCustomer(); loadInvoices(); }
+  if (name === 'products') renderProductsList();
+  if (name === 'customers') renderCustomersList();
+}
+
+// ── Products ──
+async function loadProducts() {
+  products = await apiFetch('/api/products').then(r => r.json());
+}
+
+function renderProductsList() {
+  const tbody = document.getElementById('productsList');
+  tbody.innerHTML = products.map(p => `
+    <tr>
+      <td>${esc(p.name)}</td><td>${esc(p.hsn_code)}</td><td>${esc(p.packaging)}</td><td>${p.price.toFixed(2)}</td>
+      <td>
+        <button class="btn-sm" onclick="editProduct(${p.id})">✏️</button>
+        <button class="btn-remove" onclick="deleteProduct(${p.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showAddProductModal() {
+  document.getElementById('productModalTitle').textContent = 'Add Product';
+  document.getElementById('editProductId').value = '';
+  document.getElementById('prodName').value = '';
+  document.getElementById('prodHsn').value = '';
+  document.getElementById('prodPkg').value = '';
+  document.getElementById('prodPrice').value = '';
+  document.getElementById('productModal').style.display = 'flex';
+}
+
+function editProduct(id) {
+  const p = products.find(x => x.id === id);
+  document.getElementById('productModalTitle').textContent = 'Edit Product';
+  document.getElementById('editProductId').value = id;
+  document.getElementById('prodName').value = p.name;
+  document.getElementById('prodHsn').value = p.hsn_code;
+  document.getElementById('prodPkg').value = p.packaging;
+  document.getElementById('prodPrice').value = p.price;
+  document.getElementById('productModal').style.display = 'flex';
+}
+
+async function saveProduct() {
+  const id = document.getElementById('editProductId').value;
+  const data = {
+    name: document.getElementById('prodName').value.trim(),
+    hsn_code: document.getElementById('prodHsn').value.trim(),
+    packaging: document.getElementById('prodPkg').value.trim(),
+    price: parseFloat(document.getElementById('prodPrice').value)
+  };
+  if (!data.name || !data.hsn_code || !data.packaging || isNaN(data.price)) return alert('Fill all fields');
+  if (id) await apiFetch('/api/products/' + id, { method: 'PUT', body: JSON.stringify(data) });
+  else await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
+  await loadProducts();
+  renderProductsList();
+  closeModal('productModal');
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  await apiFetch('/api/products/' + id, { method: 'DELETE' });
+  await loadProducts();
+  renderProductsList();
+}
+
+// ── Customers ──
+async function loadCustomers() {
+  customers = await apiFetch('/api/customers').then(r => r.json());
+  populateCustomerSelect();
+}
+
+function populateCustomerSelect() {
+  const sel = document.getElementById('customerSelect');
+  sel.innerHTML = '<option value="">-- Select Customer --</option>' +
+    customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+function populateFilterCustomer() {
+  const sel = document.getElementById('filterCustomer');
+  sel.innerHTML = '<option value="">All</option>' +
+    customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+function onCustomerChange() {
+  const id = parseInt(document.getElementById('customerSelect').value);
+  const c = customers.find(x => x.id === id);
+  const det = document.getElementById('customerDetails');
+  if (c) {
+    document.getElementById('custAddr').textContent = c.address || '-';
+    document.getElementById('custMob').textContent = c.mob_no || '-';
+    document.getElementById('custGst').textContent = c.gst_no || '-';
+    det.style.display = 'block';
+  } else {
+    det.style.display = 'none';
+  }
+}
+
+function renderCustomersList() {
+  const tbody = document.getElementById('customersList');
+  tbody.innerHTML = customers.map(c => `
+    <tr>
+      <td>${esc(c.name)}</td><td>${esc(c.address)}</td><td>${esc(c.mob_no)}</td><td>${esc(c.gst_no)}</td>
+      <td>
+        <button class="btn-sm" onclick="editCustomer(${c.id})">✏️</button>
+        <button class="btn-remove" onclick="deleteCustomer(${c.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showAddCustomerModal() {
+  document.getElementById('customerModalTitle').textContent = 'Add Customer';
+  document.getElementById('editCustomerId').value = '';
+  document.getElementById('custName').value = '';
+  document.getElementById('custAddress').value = '';
+  document.getElementById('custMobNo').value = '';
+  document.getElementById('custGstNo').value = '';
+  document.getElementById('customerModal').style.display = 'flex';
+}
+
+function editCustomer(id) {
+  const c = customers.find(x => x.id === id);
+  document.getElementById('customerModalTitle').textContent = 'Edit Customer';
+  document.getElementById('editCustomerId').value = id;
+  document.getElementById('custName').value = c.name;
+  document.getElementById('custAddress').value = c.address;
+  document.getElementById('custMobNo').value = c.mob_no;
+  document.getElementById('custGstNo').value = c.gst_no;
+  document.getElementById('customerModal').style.display = 'flex';
+}
+
+async function saveCustomer() {
+  const id = document.getElementById('editCustomerId').value;
+  const data = {
+    name: document.getElementById('custName').value.trim(),
+    address: document.getElementById('custAddress').value.trim(),
+    mob_no: document.getElementById('custMobNo').value.trim(),
+    gst_no: document.getElementById('custGstNo').value.trim()
+  };
+  if (!data.name) return alert('Customer name required');
+  if (id) await apiFetch('/api/customers/' + id, { method: 'PUT', body: JSON.stringify(data) });
+  else await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify(data) });
+  await loadCustomers();
+  renderCustomersList();
+  closeModal('customerModal');
+}
+
+async function deleteCustomer(id) {
+  if (!confirm('Delete this customer?')) return;
+  await apiFetch('/api/customers/' + id, { method: 'DELETE' });
+  await loadCustomers();
+  renderCustomersList();
+}
+
+// ── Invoice ──
+async function initInvoice() {
+  const { next_no } = await apiFetch('/api/invoices/next-number').then(r => r.json());
+  document.getElementById('invoiceNo').value = next_no;
+  document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
+}
+
+function addItemRow() {
+  const tbody = document.getElementById('itemsBody');
+  const idx = tbody.children.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${idx}</td>
+    <td>
+      <select onchange="onProductSelect(this)">
+        <option value="">-- Select --</option>
+        ${products.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('')}
+      </select>
+    </td>
+    <td class="hsn"></td>
+    <td class="pkg"></td>
+    <td><input type="number" value="1" min="1" onchange="calcRow(this)" oninput="calcRow(this)"></td>
+    <td><input type="number" step="0.01" value="0" onchange="calcRow(this)" oninput="calcRow(this)" class="rate"></td>
+    <td class="amt">0.00</td>
+    <td><button class="btn-remove" onclick="this.closest('tr').remove(); recalcAll();">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function onProductSelect(sel) {
+  const tr = sel.closest('tr');
+  const p = products.find(x => x.id === parseInt(sel.value));
+  if (p) {
+    tr.querySelector('.hsn').textContent = p.hsn_code;
+    tr.querySelector('.pkg').textContent = p.packaging;
+    tr.querySelector('.rate').value = p.price.toFixed(2);
+    calcRow(tr.querySelector('.rate'));
+  }
+}
+
+function calcRow(el) {
+  const tr = el.closest('tr');
+  const qty = parseInt(tr.querySelector('input[type="number"]').value) || 0;
+  const rate = parseFloat(tr.querySelector('.rate').value) || 0;
+  const amt = qty * rate;
+  tr.querySelector('.amt').textContent = amt.toFixed(2);
+  recalcAll();
+}
+
+function recalcAll() {
+  let subtotal = 0;
+  document.querySelectorAll('#itemsBody tr').forEach(tr => {
+    subtotal += parseFloat(tr.querySelector('.amt').textContent) || 0;
+  });
+  const cgst = subtotal * 0.025;
+  const sgst = subtotal * 0.025;
+  document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+  document.getElementById('cgstTotal').textContent = '₹' + cgst.toFixed(2);
+  document.getElementById('sgstTotal').textContent = '₹' + sgst.toFixed(2);
+  document.getElementById('grandTotal').textContent = '₹' + (subtotal + cgst + sgst).toFixed(2);
+}
+
+function getInvoiceData() {
+  const items = [];
+  document.querySelectorAll('#itemsBody tr').forEach(tr => {
+    const productId = parseInt(tr.querySelector('select').value);
+    if (!productId) return;
+    const qty = parseInt(tr.querySelector('input[type="number"]').value) || 0;
+    const rate = parseFloat(tr.querySelector('.rate').value) || 0;
+    items.push({ product_id: productId, quantity: qty, price: rate, amount: qty * rate });
+  });
+  const subtotal = items.reduce((s, i) => s + i.amount, 0);
+  const cgst = subtotal * 0.025;
+  const sgst = subtotal * 0.025;
+  return {
+    invoice_no: parseInt(document.getElementById('invoiceNo').value),
+    invoice_date: document.getElementById('invoiceDate').value,
+    customer_id: parseInt(document.getElementById('customerSelect').value),
+    items, subtotal, cgst_total: cgst, sgst_total: sgst, grand_total: subtotal + cgst + sgst
+  };
+}
+
+async function saveInvoice() {
+  const data = getInvoiceData();
+  if (!data.customer_id) return alert('Select a customer');
+  if (!data.items.length) return alert('Add at least one item');
+
+  const res = await apiFetch('/api/invoices', {
+    method: 'POST', body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if (res.ok) {
+    alert('Invoice #' + result.invoice_no + ' saved!');
+    resetInvoice();
+    return result;
+  } else {
+    alert('Error: ' + result.error);
+    return null;
+  }
+}
+
+async function saveAndDownload() {
+  const result = await saveInvoice();
+  if (result) {
+    await viewInvoice(result.id);
+    setTimeout(() => downloadCurrentInvoice(), 500);
+  }
+}
+
+async function resetInvoice() {
+  document.getElementById('itemsBody').innerHTML = '';
+  document.getElementById('customerSelect').value = '';
+  document.getElementById('customerDetails').style.display = 'none';
+  await initInvoice();
+  addItemRow();
+}
+
+// ── Invoice History ──
+async function loadInvoices() {
+  const params = new URLSearchParams();
+  const cid = document.getElementById('filterCustomer').value;
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  if (cid) params.append('customer_id', cid);
+  if (from) params.append('from_date', from);
+  if (to) params.append('to_date', to);
+
+  const invoices = await apiFetch('/api/invoices?' + params).then(r => r.json());
+  document.getElementById('invoicesList').innerHTML = invoices.map(inv => `
+    <tr>
+      <td>${inv.invoice_no}</td>
+      <td>${inv.invoice_date}</td>
+      <td>${esc(inv.customer_name)}</td>
+      <td>${inv.grand_total.toFixed(2)}</td>
+      <td>
+        <button class="btn-sm" onclick="viewInvoice(${inv.id})">👁️ View</button>
+        <button class="btn-remove" onclick="deleteInvoice(${inv.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;">No invoices found</td></tr>';
+}
+
+async function viewInvoice(id) {
+  currentViewInvoiceId = id;
+  const inv = await apiFetch('/api/invoices/' + id).then(r => r.json());
+  document.getElementById('invoicePrintArea').innerHTML = `
+    <div class="print-invoice">
+      <div class="pi-header">
+        <div>
+          <h2>Siddhi Enterprises</h2>
+          <p style="font-size:.85em;color:#555;">Juna Mondha, Beed - 431122</p>
+          <p style="font-size:.8em;color:#666;">GSTIN: 27CKWPS3584D1ZF | FSSAI: 11515047000269</p>
+          <p style="font-size:.8em;color:#666;">Mob: 8275223287 / 9422911445</p>
+        </div>
+        <div style="text-align:right;">
+          <h3 style="color:#1a237e;">TAX INVOICE</h3>
+          <p>Invoice #: <strong>${inv.invoice_no}</strong></p>
+          <p>Date: <strong>${inv.invoice_date}</strong></p>
+        </div>
+      </div>
+      <div class="pi-customer">
+        <strong>Bill To:</strong> ${esc(inv.customer_name)}<br>
+        ${inv.customer_address ? 'Address: ' + esc(inv.customer_address) + '<br>' : ''}
+        ${inv.customer_mob ? 'Mobile: ' + esc(inv.customer_mob) + '<br>' : ''}
+        ${inv.customer_gst ? 'GSTIN: ' + esc(inv.customer_gst) : ''}
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Product</th><th>HSN</th><th>Pkg</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+        <tbody>
+          ${inv.items.map((it, i) => `
+            <tr><td>${i + 1}</td><td>${esc(it.product_name)}</td><td>${it.hsn_code}</td><td>${it.packaging}</td>
+            <td>${it.quantity}</td><td>₹${it.price.toFixed(2)}</td><td>₹${it.amount.toFixed(2)}</td></tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="pi-totals">
+        <div><span>Subtotal:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
+        <div><span>CGST (2.5%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
+        <div><span>SGST (2.5%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
+        <div class="pi-grand"><span>Grand Total:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('viewInvoiceModal').style.display = 'flex';
+}
+
+function downloadCurrentInvoice() {
+  const printArea = document.getElementById('invoicePrintArea');
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>Invoice</title>
+    <style>
+      body { font-family: 'Segoe UI', sans-serif; padding: 20px; }
+      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 3px solid #1a237e; padding-bottom: 10px; margin-bottom: 15px; }
+      .print-invoice .pi-header h2 { color: #1a237e; }
+      .print-invoice .pi-customer { background: #f5f5f5; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: .9em; }
+      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+      .print-invoice th { background: #1a237e; color: #fff; padding: 6px 8px; font-size: .8em; text-align: left; }
+      .print-invoice td { padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: .85em; }
+      .print-invoice .pi-totals { margin-left: auto; width: 250px; }
+      .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 3px 0; }
+      .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 6px; }
+      @media print { body { margin: 0; } }
+    </style></head><body>${printArea.innerHTML}</body></html>
+  `);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 300);
+}
+
+async function deleteInvoice(id) {
+  if (!confirm('Delete this invoice?')) return;
+  await apiFetch('/api/invoices/' + id, { method: 'DELETE' });
+  loadInvoices();
+}
+
+// ── Helpers ──
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function esc(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Authenticated fetch wrapper
+function apiFetch(url, opts = {}) {
+  opts.headers = { ...opts.headers, 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' };
+  return fetch(API + url, opts).then(r => {
+    if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
+    return r;
+  });
+}
