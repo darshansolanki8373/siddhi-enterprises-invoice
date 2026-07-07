@@ -1,0 +1,6 @@
+[deploy]
+startCommand = "node server.js"
+
+[[volumes]]
+mount = "/data"
+name = "invoice-data"

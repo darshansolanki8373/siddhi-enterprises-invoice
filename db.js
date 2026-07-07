@@ -2,7 +2,9 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'invoices.db');
+// Use /data volume on Railway, local directory otherwise
+const DATA_DIR = fs.existsSync('/data') ? '/data' : __dirname;
+const DB_PATH = path.join(DATA_DIR, 'invoices.db');
 let db;
 
 async function initDB() {
