@@ -101,3 +101,28 @@ body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: 
 .login-error { color: #e53935; font-size: .85em; margin: 8px 0; }
 .btn-block { width: 100%; padding: 10px; font-size: 1em; margin-top: 10px; }
 .nav-logout { color: #ffcdd2 !important; margin-left: auto; }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .navbar { flex-direction: column; height: auto; padding: 10px; }
+  .nav-links { flex-wrap: wrap; gap: 2px; justify-content: center; }
+  .nav-link { padding: 6px 10px; font-size: .8em; }
+  .invoice-header { flex-direction: column; gap: 10px; }
+  .invoice-meta { text-align: left; }
+  .meta-row { justify-content: flex-start; }
+  .invoice-container { padding: 15px; }
+  .form-row select { min-width: 180px; }
+  #itemsTable { font-size: .75em; }
+  #itemsTable th, #itemsTable td { padding: 4px 3px; }
+  #itemsTable input[type="number"] { width: 50px; }
+  .totals-section { width: 100%; }
+  .actions { flex-direction: column; }
+  .actions .btn { width: 100%; }
+  .filters { flex-direction: column; }
+  .modal-content { width: 95%; margin: 10px; }
+  .modal-lg { width: 95%; }
+  .container { padding: 12px; }
+  .data-table { font-size: .75em; }
+  .print-invoice .pi-totals { width: 100%; }
+  .login-box { width: 90%; padding: 25px; }
+}
