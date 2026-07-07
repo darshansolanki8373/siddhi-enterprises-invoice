@@ -100,8 +100,9 @@
       <!-- Totals -->
       <div class="totals-section">
         <div class="total-row"><span>Subtotal:</span><span id="subtotal">₹0.00</span></div>
-        <div class="total-row"><span>CGST (2.5%):</span><span id="cgstTotal">₹0.00</span></div>
-        <div class="total-row"><span>SGST (2.5%):</span><span id="sgstTotal">₹0.00</span></div>
+        <div class="total-row editable"><span>CGST (<input type="number" id="cgstRate" value="2.5" step="0.1" min="0" max="50" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="cgstTotal">₹0.00</span></div>
+        <div class="total-row editable"><span>SGST (<input type="number" id="sgstRate" value="2.5" step="0.1" min="0" max="50" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="sgstTotal">₹0.00</span></div>
+        <div class="total-row editable"><span>Discount (<input type="number" id="discountRate" value="5" step="0.1" min="0" max="100" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="discountTotal">-₹0.00</span></div>
         <div class="total-row grand"><span>Grand Total:</span><span id="grandTotal">₹0.00</span></div>
       </div>
 

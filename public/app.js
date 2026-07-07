@@ -274,12 +274,18 @@ function recalcAll() {
   document.querySelectorAll('#itemsBody tr').forEach(tr => {
     subtotal += parseFloat(tr.querySelector('.amt').textContent) || 0;
   });
-  const cgst = subtotal * 0.025;
-  const sgst = subtotal * 0.025;
+  const cgstRate = parseFloat(document.getElementById('cgstRate').value) || 0;
+  const sgstRate = parseFloat(document.getElementById('sgstRate').value) || 0;
+  const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
+  const cgst = subtotal * (cgstRate / 100);
+  const sgst = subtotal * (sgstRate / 100);
+  const taxedTotal = subtotal + cgst + sgst;
+  const discount = taxedTotal * (discountRate / 100);
   document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
   document.getElementById('cgstTotal').textContent = '₹' + cgst.toFixed(2);
   document.getElementById('sgstTotal').textContent = '₹' + sgst.toFixed(2);
-  document.getElementById('grandTotal').textContent = '₹' + (subtotal + cgst + sgst).toFixed(2);
+  document.getElementById('discountTotal').textContent = '-₹' + discount.toFixed(2);
+  document.getElementById('grandTotal').textContent = '₹' + (taxedTotal - discount).toFixed(2);
 }
 
 function getInvoiceData() {
@@ -292,13 +298,19 @@ function getInvoiceData() {
     items.push({ product_id: productId, quantity: qty, price: rate, amount: qty * rate });
   });
   const subtotal = items.reduce((s, i) => s + i.amount, 0);
-  const cgst = subtotal * 0.025;
-  const sgst = subtotal * 0.025;
+  const cgstRate = parseFloat(document.getElementById('cgstRate').value) || 0;
+  const sgstRate = parseFloat(document.getElementById('sgstRate').value) || 0;
+  const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
+  const cgst = subtotal * (cgstRate / 100);
+  const sgst = subtotal * (sgstRate / 100);
+  const taxedTotal = subtotal + cgst + sgst;
+  const discount = taxedTotal * (discountRate / 100);
   return {
     invoice_no: parseInt(document.getElementById('invoiceNo').value),
     invoice_date: document.getElementById('invoiceDate').value,
     customer_id: parseInt(document.getElementById('customerSelect').value),
-    items, subtotal, cgst_total: cgst, sgst_total: sgst, grand_total: subtotal + cgst + sgst
+    items, subtotal, cgst_rate: cgstRate, sgst_rate: sgstRate, cgst_total: cgst, sgst_total: sgst,
+    discount_rate: discountRate, discount_total: discount, grand_total: taxedTotal - discount
   };
 }
 
@@ -397,8 +409,9 @@ async function viewInvoice(id) {
       </table>
       <div class="pi-totals">
         <div><span>Subtotal:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
-        <div><span>CGST (2.5%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
-        <div><span>SGST (2.5%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
+        <div><span>CGST (${(inv.cgst_rate || 2.5)}%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
+        <div><span>SGST (${(inv.sgst_rate || 2.5)}%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
+        ${(inv.discount_total || 0) > 0 ? `<div><span>Discount (${inv.discount_rate}%):</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
         <div class="pi-grand"><span>Grand Total:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
       </div>
     </div>

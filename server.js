@@ -106,10 +106,10 @@ app.get('/api/invoices/next-number', (req, res) => {
 });
 
 app.post('/api/invoices', (req, res) => {
-  const { invoice_no, invoice_date, customer_id, items, subtotal, cgst_total, sgst_total, grand_total } = req.body;
+  const { invoice_no, invoice_date, customer_id, items, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total } = req.body;
   try {
-    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, subtotal, cgst_total, sgst_total, grand_total) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [invoice_no, invoice_date, customer_id, subtotal, cgst_total, sgst_total, grand_total]);
+    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [invoice_no, invoice_date, customer_id, subtotal, cgst_rate || 2.5, sgst_rate || 2.5, cgst_total, sgst_total, discount_rate || 0, discount_total || 0, grand_total]);
     const invoiceId = getLastId();
     for (const item of items) {
       runSql('INSERT INTO invoice_items (invoice_id, product_id, quantity, price, amount) VALUES (?, ?, ?, ?, ?)',

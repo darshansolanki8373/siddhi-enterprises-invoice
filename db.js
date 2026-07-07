@@ -42,8 +42,12 @@ async function initDB() {
       invoice_date TEXT NOT NULL,
       customer_id INTEGER NOT NULL,
       subtotal REAL NOT NULL DEFAULT 0,
+      cgst_rate REAL NOT NULL DEFAULT 2.5,
+      sgst_rate REAL NOT NULL DEFAULT 2.5,
       cgst_total REAL NOT NULL DEFAULT 0,
       sgst_total REAL NOT NULL DEFAULT 0,
+      discount_rate REAL NOT NULL DEFAULT 5,
+      discount_total REAL NOT NULL DEFAULT 0,
       grand_total REAL NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now','localtime')),
       FOREIGN KEY (customer_id) REFERENCES customers(id)
