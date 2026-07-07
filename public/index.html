@@ -26,14 +26,29 @@
 
   <!-- Main App (hidden until login) -->
   <div id="mainApp" style="display:none">
+
+  <!-- Bill Type Selection -->
+  <div id="billTypeScreen" class="login-screen" style="display:none">
+    <div class="login-box">
+      <h1>🏪 Siddhi Enterprises</h1>
+      <p class="login-subtitle">Select Bill Type</p>
+      <button class="btn btn-primary btn-block" onclick="selectBillType('gst')" style="margin-bottom:10px">📋 GST Bill</button>
+      <button class="btn btn-success btn-block" onclick="selectBillType('non-gst')">📄 Non-GST Bill</button>
+      <button class="btn btn-secondary btn-block" onclick="doLogout()" style="margin-top:15px">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- App Content -->
+  <div id="appContent" style="display:none">
   <!-- Navigation -->
   <nav class="navbar">
-    <div class="brand">🏪 Siddhi Enterprises</div>
+    <div class="brand">🏪 Siddhi Enterprises <span id="billTypeBadge" class="bill-badge"></span></div>
     <div class="nav-links">
       <a href="#" onclick="showSection('invoice')" class="nav-link active" id="nav-invoice">New Invoice</a>
       <a href="#" onclick="showSection('history')" class="nav-link" id="nav-history">Invoice History</a>
       <a href="#" onclick="showSection('products')" class="nav-link" id="nav-products">Products</a>
       <a href="#" onclick="showSection('customers')" class="nav-link" id="nav-customers">Customers</a>
+      <a href="#" onclick="switchBillType()" class="nav-link">🔄 Switch Bill</a>
       <a href="#" onclick="doLogout()" class="nav-link nav-logout">🚪 Logout</a>
     </div>
   </nav>
@@ -100,10 +115,11 @@
       <!-- Totals -->
       <div class="totals-section">
         <div class="total-row"><span>Subtotal:</span><span id="subtotal">₹0.00</span></div>
-        <div class="total-row editable"><span>CGST (<input type="number" id="cgstRate" value="2.5" step="0.1" min="0" max="50" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="cgstTotal">₹0.00</span></div>
-        <div class="total-row editable"><span>SGST (<input type="number" id="sgstRate" value="2.5" step="0.1" min="0" max="50" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="sgstTotal">₹0.00</span></div>
-        <div class="total-row editable"><span>Discount (<input type="number" id="discountRate" value="5" step="0.1" min="0" max="100" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="discountTotal">-₹0.00</span></div>
+        <div class="total-row editable gst-only"><span>CGST (<input type="number" id="cgstRate" value="2.5" step="0.1" min="0" max="50" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="cgstTotal">₹0.00</span></div>
+        <div class="total-row editable gst-only"><span>SGST (<input type="number" id="sgstRate" value="2.5" step="0.1" min="0" max="50" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="sgstTotal">₹0.00</span></div>
+        <div class="total-row editable gst-only"><span>Discount (<input type="number" id="discountRate" value="5" step="0.1" min="0" max="100" onchange="recalcAll()" oninput="recalcAll()">%):</span><span id="discountTotal">-₹0.00</span></div>
         <div class="total-row grand"><span>Grand Total:</span><span id="grandTotal">₹0.00</span></div>
+        <div class="total-row words"><span>In Words:</span><span id="amountWords"></span></div>
       </div>
 
       <!-- Actions -->
@@ -136,7 +152,7 @@
       </div>
       <table class="data-table">
         <thead>
-          <tr><th>Inv #</th><th>Date</th><th>Customer</th><th>Total (₹)</th><th>Actions</th></tr>
+          <tr><th>Inv #</th><th>Date</th><th>Customer</th><th>Total (₹)</th><th>Type</th><th>Actions</th></tr>
         </thead>
         <tbody id="invoicesList"></tbody>
       </table>
@@ -205,6 +221,7 @@
     </div>
   </div>
 
+  </div><!-- end appContent -->
   </div><!-- end mainApp -->
 
   <script src="app.js"></script>

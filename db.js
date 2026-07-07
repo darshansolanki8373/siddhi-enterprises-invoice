@@ -41,6 +41,7 @@ async function initDB() {
       invoice_no INTEGER NOT NULL UNIQUE,
       invoice_date TEXT NOT NULL,
       customer_id INTEGER NOT NULL,
+      bill_type TEXT NOT NULL DEFAULT 'gst',
       subtotal REAL NOT NULL DEFAULT 0,
       cgst_rate REAL NOT NULL DEFAULT 2.5,
       sgst_rate REAL NOT NULL DEFAULT 2.5,

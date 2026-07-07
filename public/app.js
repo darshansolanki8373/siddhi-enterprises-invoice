@@ -2,6 +2,7 @@ const API = '';
 let products = [];
 let customers = [];
 let currentViewInvoiceId = null;
+let billType = 'gst'; // 'gst' or 'non-gst'
 
 // ── Auth ──
 function getToken() { return sessionStorage.getItem('token'); }
@@ -23,7 +24,8 @@ async function doLogin() {
     sessionStorage.setItem('token', data.token);
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    await initApp();
+    document.getElementById('billTypeScreen').style.display = 'flex';
+    document.getElementById('appContent').style.display = 'none';
   } catch (e) {
     errEl.textContent = 'Connection error'; errEl.style.display = 'block';
   }
@@ -32,8 +34,27 @@ async function doLogin() {
 function doLogout() {
   sessionStorage.removeItem('token');
   document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('appContent').style.display = 'none';
+  document.getElementById('billTypeScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginPass').value = '';
+}
+
+function selectBillType(type) {
+  billType = type;
+  document.getElementById('billTypeScreen').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+  document.getElementById('billTypeBadge').textContent = type === 'gst' ? 'GST' : 'Non-GST';
+  // Show/hide GST fields
+  document.querySelectorAll('.gst-only').forEach(el => {
+    el.style.display = type === 'gst' ? 'flex' : 'none';
+  });
+  initApp();
+}
+
+function switchBillType() {
+  document.getElementById('appContent').style.display = 'none';
+  document.getElementById('billTypeScreen').style.display = 'flex';
 }
 
 async function initApp() {
@@ -53,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (getToken()) {
     // Try to use existing token
     fetch(API + '/api/invoices/next-number', { headers: authHeaders() })
-      .then(r => { if (r.ok) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; initApp(); } else { doLogout(); } })
+      .then(r => { if (r.ok) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; document.getElementById('billTypeScreen').style.display = 'flex'; } else { doLogout(); } })
       .catch(() => doLogout());
   }
 });
@@ -274,18 +295,20 @@ function recalcAll() {
   document.querySelectorAll('#itemsBody tr').forEach(tr => {
     subtotal += parseFloat(tr.querySelector('.amt').textContent) || 0;
   });
-  const cgstRate = parseFloat(document.getElementById('cgstRate').value) || 0;
-  const sgstRate = parseFloat(document.getElementById('sgstRate').value) || 0;
-  const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
+  const cgstRate = billType === 'gst' ? (parseFloat(document.getElementById('cgstRate').value) || 0) : 0;
+  const sgstRate = billType === 'gst' ? (parseFloat(document.getElementById('sgstRate').value) || 0) : 0;
+  const discountRate = billType === 'gst' ? (parseFloat(document.getElementById('discountRate').value) || 0) : 0;
   const cgst = subtotal * (cgstRate / 100);
   const sgst = subtotal * (sgstRate / 100);
   const taxedTotal = subtotal + cgst + sgst;
   const discount = taxedTotal * (discountRate / 100);
+  const grandTotal = billType === 'gst' ? taxedTotal - discount : subtotal;
   document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
   document.getElementById('cgstTotal').textContent = '₹' + cgst.toFixed(2);
   document.getElementById('sgstTotal').textContent = '₹' + sgst.toFixed(2);
   document.getElementById('discountTotal').textContent = '-₹' + discount.toFixed(2);
-  document.getElementById('grandTotal').textContent = '₹' + (taxedTotal - discount).toFixed(2);
+  document.getElementById('grandTotal').textContent = '₹' + grandTotal.toFixed(2);
+  document.getElementById('amountWords').textContent = numberToWords(grandTotal);
 }
 
 function getInvoiceData() {
@@ -298,19 +321,21 @@ function getInvoiceData() {
     items.push({ product_id: productId, quantity: qty, price: rate, amount: qty * rate });
   });
   const subtotal = items.reduce((s, i) => s + i.amount, 0);
-  const cgstRate = parseFloat(document.getElementById('cgstRate').value) || 0;
-  const sgstRate = parseFloat(document.getElementById('sgstRate').value) || 0;
-  const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
+  const cgstRate = billType === 'gst' ? (parseFloat(document.getElementById('cgstRate').value) || 0) : 0;
+  const sgstRate = billType === 'gst' ? (parseFloat(document.getElementById('sgstRate').value) || 0) : 0;
+  const discountRate = billType === 'gst' ? (parseFloat(document.getElementById('discountRate').value) || 0) : 0;
   const cgst = subtotal * (cgstRate / 100);
   const sgst = subtotal * (sgstRate / 100);
   const taxedTotal = subtotal + cgst + sgst;
   const discount = taxedTotal * (discountRate / 100);
+  const grandTotal = billType === 'gst' ? taxedTotal - discount : subtotal;
   return {
     invoice_no: parseInt(document.getElementById('invoiceNo').value),
     invoice_date: document.getElementById('invoiceDate').value,
     customer_id: parseInt(document.getElementById('customerSelect').value),
+    bill_type: billType,
     items, subtotal, cgst_rate: cgstRate, sgst_rate: sgstRate, cgst_total: cgst, sgst_total: sgst,
-    discount_rate: discountRate, discount_total: discount, grand_total: taxedTotal - discount
+    discount_rate: discountRate, discount_total: discount, grand_total: grandTotal
   };
 }
 
@@ -366,12 +391,13 @@ async function loadInvoices() {
       <td>${inv.invoice_date}</td>
       <td>${esc(inv.customer_name)}</td>
       <td>${inv.grand_total.toFixed(2)}</td>
+      <td><span class="bill-badge-sm">${inv.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</span></td>
       <td>
         <button class="btn-sm" onclick="viewInvoice(${inv.id})">👁️ View</button>
         <button class="btn-remove" onclick="deleteInvoice(${inv.id})">🗑️</button>
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;">No invoices found</td></tr>';
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;">No invoices found</td></tr>';
 }
 
 async function viewInvoice(id) {
@@ -409,10 +435,13 @@ async function viewInvoice(id) {
       </table>
       <div class="pi-totals">
         <div><span>Subtotal:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
+        ${inv.bill_type !== 'non-gst' ? `
         <div><span>CGST (${(inv.cgst_rate || 2.5)}%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
         <div><span>SGST (${(inv.sgst_rate || 2.5)}%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
         ${(inv.discount_total || 0) > 0 ? `<div><span>Discount (${inv.discount_rate}%):</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
+        ` : ''}
         <div class="pi-grand"><span>Grand Total:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
+        <div style="font-size:.8em;font-style:italic;margin-top:6px;"><strong>In Words:</strong> ${numberToWords(inv.grand_total)}</div>
       </div>
     </div>
   `;
@@ -464,4 +493,30 @@ function apiFetch(url, opts = {}) {
     if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
     return r;
   });
+}
+
+// Number to words (Indian system)
+function numberToWords(num) {
+  if (num === 0) return 'Zero';
+  const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+    'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function twoDigits(n) {
+    if (n < 20) return ones[n];
+    return tens[Math.floor(n/10)] + (n%10 ? ' ' + ones[n%10] : '');
+  }
+  function threeDigits(n) {
+    if (n >= 100) return ones[Math.floor(n/100)] + ' Hundred' + (n%100 ? ' and ' + twoDigits(n%100) : '');
+    return twoDigits(n);
+  }
+  const n = Math.round(Math.abs(num));
+  const paise = Math.round((Math.abs(num) - n) * 100);
+  let result = '';
+  if (n >= 10000000) { result += threeDigits(Math.floor(n/10000000)) + ' Crore '; }
+  if (n >= 100000) { result += twoDigits(Math.floor((n%10000000)/100000)) + ' Lakh '; }
+  if (n >= 1000) { result += twoDigits(Math.floor((n%100000)/1000)) + ' Thousand '; }
+  if (n >= 100 || (n > 0 && result === '')) { result += threeDigits(n%1000); }
+  result = result.trim() + ' Rupees';
+  if (paise > 0) result += ' and ' + twoDigits(paise) + ' Paise';
+  return result + ' Only';
 }
