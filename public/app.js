@@ -458,6 +458,7 @@ async function viewInvoice(id) {
         ${inv.customer_gst ? 'GSTIN: ' + esc(inv.customer_gst) : ''}
       </div>
       <table>
+        <colgroup><col style="width:5%"><col style="width:30%"><col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:17%"><col style="width:20%"></colgroup>
         <thead><tr><th>#</th><th>Product</th><th>HSN</th><th>Pkg</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
         <tbody>
           ${inv.items.map((it, i) => `
@@ -505,7 +506,7 @@ function downloadCurrentInvoice() {
   setTimeout(() => { win.print(); }, 300);
 }
 
-function printInvoice() {
+function printInvoice(includeSeller) {
   const printArea = document.getElementById('invoicePrintArea');
   const invoiceHTML = printArea.innerHTML;
   const copyHTML = (label) => `
@@ -521,26 +522,36 @@ function printInvoice() {
       </div>
     </div>
   `;
+  const bodyContent = includeSeller
+    ? `${copyHTML('Customer Copy')}<div class="cut-line-label">✂</div><div class="cut-line"></div>${copyHTML('Seller Copy')}`
+    : copyHTML('Customer Copy');
+  const bodyStyle = includeSeller
+    ? 'display: flex; gap: 0; height: 100vh;'
+    : 'display: flex; height: 100vh;';
+  const sectionStyle = includeSeller
+    ? ''
+    : '.copy-section { max-width: 50%; }';
   const win = window.open('', '_blank');
   win.document.write(`
     <html><head><title>Print Invoice</title>
     <style>
-      @page { size: A4 landscape; margin: 5mm 8mm; }
+      @page { size: A4 landscape; margin: 2mm 4mm; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Segoe UI', sans-serif; display: flex; gap: 4px; height: 100vh; }
-      .copy-section { flex: 1; display: flex; flex-direction: column; overflow: visible; padding: 6px 12px 8px 12px; border: 1.5px solid #000; }
+      body { font-family: 'Segoe UI', sans-serif; ${bodyStyle} }
+      .copy-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 4px 10px 6px 10px; border: 1.5px solid #000; min-width: 0; }
+      ${sectionStyle}
       .copy-label { text-align: right; font-size: 9px; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 1px; }
-      .cut-line { display: none; }
-      .cut-line-label { display: none; }
+      .cut-line { border: none; border-left: 2px dashed #888; width: 0; align-self: stretch; }
+      .cut-line-label { writing-mode: vertical-rl; font-size: 8px; color: #999; display: flex; align-items: center; padding: 0 1px; }
       .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 5px; }
-      .print-invoice .pi-header h2 { color: #000; font-size: 14px; font-weight: bold; }
-      .print-invoice .pi-header h3 { font-size: 11px; color: #000; }
-      .print-invoice .pi-header p { font-size: 9px; color: #333; margin: 0; line-height: 1.3; }
-      .print-invoice .pi-customer { padding: 4px 6px; border-radius: 3px; margin-bottom: 5px; font-size: 9px; line-height: 1.3; }
-      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-      .print-invoice th { background: #000; color: #fff; padding: 2px 4px; font-size: 8.5px; text-align: left; }
+      .print-invoice .pi-header h2 { color: #000; font-size: 13px; font-weight: bold; }
+      .print-invoice .pi-header h3 { font-size: 10px; color: #000; }
+      .print-invoice .pi-header p { font-size: 8px; color: #333; margin: 0; line-height: 1.3; }
+      .print-invoice .pi-customer { padding: 3px 6px; border-radius: 3px; margin-bottom: 4px; font-size: 8.5px; line-height: 1.3; }
+      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 4px; table-layout: fixed; }
+      .print-invoice th { background: #000; color: #fff; padding: 2px 3px; font-size: 8px; text-align: left; overflow: hidden; }
       .print-invoice th:last-child { text-align: right; }
-      .print-invoice td { padding: 1.5px 4px; border-bottom: 1px solid #ccc; font-size: 9px; line-height: 1.2; }
+      .print-invoice td { padding: 1.5px 3px; border-bottom: 1px solid #ccc; font-size: 8.5px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .print-invoice td:last-child { text-align: right; }
       .print-invoice .pi-totals { margin-left: auto; width: 190px; }
       .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; line-height: 1.3; }
@@ -553,10 +564,7 @@ function printInvoice() {
       .thank-you { font-size: 9px; color: #333; font-style: italic; }
       @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style></head><body>
-      ${copyHTML('Customer Copy')}
-      <div class="cut-line-label">✂ - - - - - - - - - - - - - - - - - - - - - - Cut Here - - - - - - - - - - - - - - - - - - - - - - ✂</div>
-      <hr class="cut-line">
-      ${copyHTML('Seller Copy')}
+      ${bodyContent}
     </body></html>
   `);
   win.document.close();
