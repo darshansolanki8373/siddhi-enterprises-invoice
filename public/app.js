@@ -441,8 +441,8 @@ async function viewInvoice(id) {
         ${(inv.discount_total || 0) > 0 ? `<div><span>Discount (${inv.discount_rate}%):</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
         ` : ''}
         <div class="pi-grand"><span>Grand Total:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
-        <div style="font-size:.8em;font-style:italic;margin-top:6px;"><strong>In Words:</strong> ${numberToWords(inv.grand_total)}</div>
       </div>
+      <div style="clear:both;width:100%;font-size:.85em;font-style:italic;margin-top:8px;text-align:left;"><strong>In Words:</strong> ${numberToWords(inv.grand_total)}</div>
     </div>
   `;
   document.getElementById('viewInvoiceModal').style.display = 'flex';
@@ -466,6 +466,60 @@ function downloadCurrentInvoice() {
       .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 6px; }
       @media print { body { margin: 0; } }
     </style></head><body>${printArea.innerHTML}</body></html>
+  `);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 300);
+}
+
+function printInvoice() {
+  const printArea = document.getElementById('invoicePrintArea');
+  const invoiceHTML = printArea.innerHTML;
+  const copyHTML = (label) => `
+    <div class="copy-section">
+      <div class="copy-label">${label}</div>
+      ${invoiceHTML}
+      <div class="invoice-footer">
+        <div class="signature-block">
+          <div class="signature-line"></div>
+          <div>Authorized Signature</div>
+        </div>
+        <div class="thank-you">Thank you for your business!</div>
+      </div>
+    </div>
+  `;
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>Print Invoice</title>
+    <style>
+      @page { size: A4; margin: 8mm 10mm; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Segoe UI', sans-serif; }
+      .copy-section { height: 48vh; overflow: hidden; position: relative; padding: 6px 10px 30px 10px; }
+      .copy-label { text-align: right; font-size: 10px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 2px; }
+      .cut-line { border: none; border-top: 2px dashed #888; margin: 0; }
+      .cut-line-label { text-align: center; font-size: 9px; color: #999; margin: 1px 0; }
+      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #1a237e; padding-bottom: 6px; margin-bottom: 8px; }
+      .print-invoice .pi-header h2 { color: #1a237e; font-size: 14px; }
+      .print-invoice .pi-header h3 { font-size: 12px; }
+      .print-invoice .pi-header p { font-size: 9px; color: #555; margin: 1px 0; }
+      .print-invoice .pi-customer { background: #f5f5f5; padding: 5px 8px; border-radius: 3px; margin-bottom: 6px; font-size: 10px; }
+      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+      .print-invoice th { background: #1a237e; color: #fff; padding: 3px 5px; font-size: 9px; text-align: left; }
+      .print-invoice td { padding: 2px 5px; border-bottom: 1px solid #ddd; font-size: 9px; }
+      .print-invoice .pi-totals { margin-left: auto; width: 200px; }
+      .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; }
+      .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 3px; }
+      .invoice-footer { position: absolute; bottom: 5px; left: 10px; right: 10px; }
+      .signature-block { float: right; text-align: center; font-size: 10px; margin-top: 5px; }
+      .signature-line { width: 150px; border-bottom: 1px solid #333; margin-bottom: 3px; height: 25px; }
+      .thank-you { clear: both; text-align: center; font-size: 9px; color: #666; font-style: italic; padding-top: 3px; }
+      @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style></head><body>
+      ${copyHTML('Customer Copy')}
+      <div class="cut-line-label">✂ - - - - - - - - - - - - - - - - - - - - - - Cut Here - - - - - - - - - - - - - - - - - - - - - - ✂</div>
+      <hr class="cut-line">
+      ${copyHTML('Seller Copy')}
+    </body></html>
   `);
   win.document.close();
   setTimeout(() => { win.print(); }, 300);
