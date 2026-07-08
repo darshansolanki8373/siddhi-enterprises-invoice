@@ -88,6 +88,7 @@ function showSection(name) {
   if (name === 'history') { populateFilterCustomer(); loadInvoices(); }
   if (name === 'products') renderProductsList();
   if (name === 'customers') renderCustomersList();
+  if (name === 'balances') loadBalances();
 }
 
 // ── Products ──
@@ -334,6 +335,7 @@ function getInvoiceData() {
     invoice_date: document.getElementById('invoiceDate').value,
     customer_id: parseInt(document.getElementById('customerSelect').value),
     bill_type: billType,
+    payment_mode: document.getElementById('paymentMode').value,
     items, subtotal, cgst_rate: cgstRate, sgst_rate: sgstRate, cgst_total: cgst, sgst_total: sgst,
     discount_rate: discountRate, discount_total: discount, grand_total: grandTotal
   };
@@ -370,6 +372,7 @@ async function resetInvoice() {
   document.getElementById('itemsBody').innerHTML = '';
   document.getElementById('customerSelect').value = '';
   document.getElementById('customerDetails').style.display = 'none';
+  document.getElementById('paymentMode').value = 'cash';
   await initInvoice();
   addItemRow();
 }
@@ -392,12 +395,13 @@ async function loadInvoices() {
       <td>${esc(inv.customer_name)}</td>
       <td>${inv.grand_total.toFixed(2)}</td>
       <td><span class="bill-badge-sm">${inv.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</span></td>
+      <td><span class="bill-badge-sm" style="background:${inv.payment_mode === 'credit' ? '#fff3e0;color:#e65100' : '#e8f5e9;color:#2e7d32'}">${inv.payment_mode === 'credit' ? '📝 Credit' : '💵 Cash'}</span></td>
       <td>
         <button class="btn-sm" onclick="viewInvoice(${inv.id})">👁️ View</button>
         <button class="btn-remove" onclick="deleteInvoice(${inv.id})">🗑️</button>
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;">No invoices found</td></tr>';
+  `).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;">No invoices found</td></tr>';
 }
 
 async function viewInvoice(id) {
@@ -416,6 +420,7 @@ async function viewInvoice(id) {
           <h3 style="color:#1a237e;">TAX INVOICE</h3>
           <p>Invoice #: <strong>${inv.invoice_no}</strong></p>
           <p>Date: <strong>${inv.invoice_date}</strong></p>
+          <p>Payment: <strong>${inv.payment_mode === 'credit' ? '📝 Credit' : '💵 Cash'}</strong></p>
         </div>
       </div>
       <div class="pi-customer">
@@ -547,6 +552,32 @@ function apiFetch(url, opts = {}) {
     if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
     return r;
   });
+}
+
+// ── Customer Balances ──
+async function loadBalances() {
+  const balances = await apiFetch('/api/customer-balances').then(r => r.json());
+  document.getElementById('balancesList').innerHTML = balances.map(b => `
+    <tr>
+      <td>${esc(b.name)}</td>
+      <td>${esc(b.mob_no)}</td>
+      <td style="color:#e65100;font-weight:bold;">₹${b.total_credit.toFixed(2)}</td>
+      <td>₹${b.total_sales.toFixed(2)}</td>
+      <td><button class="btn-sm" onclick="viewCreditDetails(${b.id}, '${esc(b.name).replace(/'/g, "\\'")}')">View Details</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;">No credit balances</td></tr>';
+}
+
+async function viewCreditDetails(customerId, name) {
+  const invoices = await apiFetch('/api/customer-balances/' + customerId).then(r => r.json());
+  document.getElementById('creditDetailsTitle').textContent = 'Credit Details - ' + name;
+  let total = 0;
+  document.getElementById('creditDetailsList').innerHTML = invoices.map(inv => {
+    total += inv.grand_total;
+    return `<tr><td>${inv.invoice_no}</td><td>${inv.invoice_date}</td><td>₹${inv.grand_total.toFixed(2)}</td><td><span class="bill-badge-sm">${inv.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</span></td></tr>`;
+  }).join('');
+  document.getElementById('creditDetailsTotal').textContent = 'Total Credit: ₹' + total.toFixed(2);
+  document.getElementById('creditDetailsModal').style.display = 'flex';
 }
 
 // Number to words (Indian system)

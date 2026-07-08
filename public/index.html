@@ -48,6 +48,7 @@
       <a href="#" onclick="showSection('history')" class="nav-link" id="nav-history">Invoice History</a>
       <a href="#" onclick="showSection('products')" class="nav-link" id="nav-products">Products</a>
       <a href="#" onclick="showSection('customers')" class="nav-link" id="nav-customers">Customers</a>
+      <a href="#" onclick="showSection('balances')" class="nav-link" id="nav-balances">💰 Balances</a>
       <a href="#" onclick="switchBillType()" class="nav-link">🔄 Switch Bill</a>
       <a href="#" onclick="doLogout()" class="nav-link nav-logout">🚪 Logout</a>
     </div>
@@ -89,6 +90,17 @@
         </div>
         <div id="customerDetails" class="customer-details" style="display:none">
           <span id="custAddr"></span> | <span id="custMob"></span> | <span>GST: <span id="custGst"></span></span>
+        </div>
+      </div>
+
+      <!-- Payment Mode -->
+      <div class="customer-section">
+        <div class="form-row">
+          <label>Payment Mode:</label>
+          <select id="paymentMode">
+            <option value="cash">💵 Cash</option>
+            <option value="credit">📝 Credit</option>
+          </select>
         </div>
       </div>
 
@@ -152,7 +164,7 @@
       </div>
       <table class="data-table">
         <thead>
-          <tr><th>Inv #</th><th>Date</th><th>Customer</th><th>Total (₹)</th><th>Type</th><th>Actions</th></tr>
+          <tr><th>Inv #</th><th>Date</th><th>Customer</th><th>Total (₹)</th><th>Type</th><th>Payment</th><th>Actions</th></tr>
         </thead>
         <tbody id="invoicesList"></tbody>
       </table>
@@ -180,6 +192,33 @@
       </table>
     </div>
   </section>
+
+  <!-- ═══ CUSTOMER BALANCES SECTION ═══ -->
+  <section id="section-balances" class="section" style="display:none">
+    <div class="container">
+      <h2>💰 Customer Balances (Credit)</h2>
+      <table class="data-table">
+        <thead><tr><th>Customer</th><th>Mobile</th><th>Credit Balance (₹)</th><th>Total Sales (₹)</th><th>Actions</th></tr></thead>
+        <tbody id="balancesList"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ CREDIT DETAILS MODAL ═══ -->
+  <div id="creditDetailsModal" class="modal" style="display:none">
+    <div class="modal-content modal-lg">
+      <span class="close" onclick="closeModal('creditDetailsModal')">&times;</span>
+      <h3 id="creditDetailsTitle">Credit Details</h3>
+      <table class="data-table">
+        <thead><tr><th>Inv #</th><th>Date</th><th>Amount (₹)</th><th>Type</th></tr></thead>
+        <tbody id="creditDetailsList"></tbody>
+      </table>
+      <div id="creditDetailsTotal" style="text-align:right;font-weight:bold;margin-top:10px;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('creditDetailsModal')">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══ VIEW INVOICE MODAL ═══ -->
   <div id="viewInvoiceModal" class="modal" style="display:none">

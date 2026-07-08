@@ -106,10 +106,10 @@ app.get('/api/invoices/next-number', (req, res) => {
 });
 
 app.post('/api/invoices', (req, res) => {
-  const { invoice_no, invoice_date, customer_id, bill_type, items, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total } = req.body;
+  const { invoice_no, invoice_date, customer_id, bill_type, items, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode } = req.body;
   try {
-    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, bill_type, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [invoice_no, invoice_date, customer_id, bill_type || 'gst', subtotal, cgst_rate || 0, sgst_rate || 0, cgst_total || 0, sgst_total || 0, discount_rate || 0, discount_total || 0, grand_total]);
+    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, bill_type, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [invoice_no, invoice_date, customer_id, bill_type || 'gst', subtotal, cgst_rate || 0, sgst_rate || 0, cgst_total || 0, sgst_total || 0, discount_rate || 0, discount_total || 0, grand_total, payment_mode || 'cash']);
     const invoiceId = getLastId();
     for (const item of items) {
       runSql('INSERT INTO invoice_items (invoice_id, product_id, quantity, price, amount) VALUES (?, ?, ?, ?, ?)',
@@ -151,6 +151,31 @@ app.delete('/api/invoices/:id', (req, res) => {
   runSql('DELETE FROM invoices WHERE id = ?', [Number(req.params.id)]);
   saveDB();
   res.json({ success: true });
+});
+
+// ── Customer Balances API ──
+app.get('/api/customer-balances', (req, res) => {
+  const balances = queryAll(`
+    SELECT c.id, c.name, c.mob_no,
+      COALESCE(SUM(CASE WHEN i.payment_mode = 'credit' THEN i.grand_total ELSE 0 END), 0) as total_credit,
+      COALESCE(SUM(CASE WHEN i.payment_mode = 'cash' THEN i.grand_total ELSE 0 END), 0) as total_cash,
+      COALESCE(SUM(i.grand_total), 0) as total_sales
+    FROM customers c
+    LEFT JOIN invoices i ON c.id = i.customer_id
+    GROUP BY c.id
+    HAVING total_credit > 0
+    ORDER BY total_credit DESC
+  `);
+  res.json(balances);
+});
+
+app.get('/api/customer-balances/:id', (req, res) => {
+  const invoices = queryAll(`
+    SELECT invoice_no, invoice_date, grand_total, payment_mode, bill_type
+    FROM invoices WHERE customer_id = ? AND payment_mode = 'credit'
+    ORDER BY invoice_date DESC
+  `, [Number(req.params.id)]);
+  res.json(invoices);
 });
 
 // ── Start ──

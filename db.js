@@ -52,6 +52,7 @@ async function initDB() {
       discount_rate REAL NOT NULL DEFAULT 5,
       discount_total REAL NOT NULL DEFAULT 0,
       grand_total REAL NOT NULL DEFAULT 0,
+      payment_mode TEXT NOT NULL DEFAULT 'cash',
       created_at TEXT DEFAULT (datetime('now','localtime')),
       FOREIGN KEY (customer_id) REFERENCES customers(id)
     )
@@ -120,6 +121,9 @@ async function initDB() {
     for (const c of customers) { stmt.run(c); }
     stmt.free();
   }
+
+  // Migration: add payment_mode column if missing
+  try { db.run('ALTER TABLE invoices ADD COLUMN payment_mode TEXT NOT NULL DEFAULT \'cash\''); } catch(e) { /* column already exists */ }
 
   saveDB();
   return db;
