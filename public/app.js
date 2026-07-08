@@ -469,7 +469,7 @@ async function viewInvoice(id) {
       <div class="pi-totals">
         <div><span>Original Amount:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
         ${inv.bill_type !== 'non-gst' ? `
-        ${(inv.discount_total || 0) > 0 ? `<div style="color:#e65100;"><span>Special Discount:</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
+        ${(inv.discount_total || 0) > 0 ? `<div><span>Special Discount:</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
         <div><span>Taxable Amount:</span><span>₹${(inv.subtotal - (inv.discount_total || 0)).toFixed(2)}</span></div>
         <div><span>CGST (${(inv.cgst_rate || 2.5)}%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
         <div><span>SGST (${(inv.sgst_rate || 2.5)}%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
@@ -529,25 +529,28 @@ function printInvoice() {
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Segoe UI', sans-serif; display: flex; gap: 4px; height: 100vh; }
       .copy-section { flex: 1; display: flex; flex-direction: column; overflow: visible; padding: 6px 12px 8px 12px; border: 1.5px solid #000; }
-      .copy-label { text-align: right; font-size: 9px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 1px; }
+      .copy-label { text-align: right; font-size: 9px; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 1px; }
       .cut-line { display: none; }
       .cut-line-label { display: none; }
-      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #1a237e; padding-bottom: 4px; margin-bottom: 5px; }
-      .print-invoice .pi-header h2 { color: #1a237e; font-size: 14px; }
-      .print-invoice .pi-header h3 { font-size: 11px; }
-      .print-invoice .pi-header p { font-size: 9px; color: #555; margin: 0; line-height: 1.3; }
-      .print-invoice .pi-customer { background: #f5f5f5; padding: 4px 6px; border-radius: 3px; margin-bottom: 5px; font-size: 9px; line-height: 1.3; }
+      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 5px; }
+      .print-invoice .pi-header h2 { color: #000; font-size: 14px; font-weight: bold; }
+      .print-invoice .pi-header h3 { font-size: 11px; color: #000; }
+      .print-invoice .pi-header p { font-size: 9px; color: #333; margin: 0; line-height: 1.3; }
+      .print-invoice .pi-customer { background: #f0f0f0; padding: 4px 6px; border-radius: 3px; margin-bottom: 5px; font-size: 9px; line-height: 1.3; }
       .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-      .print-invoice th { background: #1a237e; color: #fff; padding: 2px 4px; font-size: 8.5px; text-align: left; }
-      .print-invoice td { padding: 1.5px 4px; border-bottom: 1px solid #ddd; font-size: 9px; line-height: 1.2; }
+      .print-invoice th { background: #000; color: #fff; padding: 2px 4px; font-size: 8.5px; text-align: left; }
+      .print-invoice th:last-child { text-align: right; }
+      .print-invoice td { padding: 1.5px 4px; border-bottom: 1px solid #ccc; font-size: 9px; line-height: 1.2; }
+      .print-invoice td:last-child { text-align: right; }
       .print-invoice .pi-totals { margin-left: auto; width: 190px; }
       .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; line-height: 1.3; }
-      .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 2px; }
+      .print-invoice .pi-totals div span:last-child { text-align: right; min-width: 70px; }
+      .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #000; padding-top: 2px; }
       .print-invoice { flex: 1; }
       .invoice-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding: 0 8px; }
       .signature-block { text-align: center; font-size: 9px; }
-      .signature-line { width: 120px; border-bottom: 1px solid #333; margin-bottom: 2px; height: 18px; }
-      .thank-you { font-size: 9px; color: #666; font-style: italic; }
+      .signature-line { width: 120px; border-bottom: 1px solid #000; margin-bottom: 2px; height: 18px; }
+      .thank-you { font-size: 9px; color: #333; font-style: italic; }
       @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style></head><body>
       ${copyHTML('Customer Copy')}
