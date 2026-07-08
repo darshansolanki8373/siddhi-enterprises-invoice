@@ -25,7 +25,8 @@ async function initDB() {
       name TEXT NOT NULL,
       hsn_code TEXT NOT NULL,
       packaging TEXT NOT NULL,
-      price REAL NOT NULL
+      price REAL NOT NULL,
+      stock INTEGER NOT NULL DEFAULT 0
     )
   `);
   db.run(`
@@ -124,6 +125,8 @@ async function initDB() {
 
   // Migration: add payment_mode column if missing
   try { db.run('ALTER TABLE invoices ADD COLUMN payment_mode TEXT NOT NULL DEFAULT \'cash\''); } catch(e) { /* column already exists */ }
+  // Migration: add stock column to products if missing
+  try { db.run('ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0'); } catch(e) { /* column already exists */ }
 
   saveDB();
   return db;

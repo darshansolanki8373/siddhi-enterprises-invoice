@@ -53,18 +53,26 @@ app.get('/api/products', (req, res) => {
 });
 
 app.post('/api/products', (req, res) => {
-  const { name, hsn_code, packaging, price } = req.body;
-  runSql('INSERT INTO products (name, hsn_code, packaging, price) VALUES (?, ?, ?, ?)', [name, hsn_code, packaging, price]);
+  const { name, hsn_code, packaging, price, stock } = req.body;
+  runSql('INSERT INTO products (name, hsn_code, packaging, price, stock) VALUES (?, ?, ?, ?, ?)', [name, hsn_code, packaging, price, stock || 0]);
   const id = getLastId();
   saveDB();
   res.json({ id });
 });
 
 app.put('/api/products/:id', (req, res) => {
-  const { name, hsn_code, packaging, price } = req.body;
-  runSql('UPDATE products SET name=?, hsn_code=?, packaging=?, price=? WHERE id=?', [name, hsn_code, packaging, price, Number(req.params.id)]);
+  const { name, hsn_code, packaging, price, stock } = req.body;
+  runSql('UPDATE products SET name=?, hsn_code=?, packaging=?, price=?, stock=? WHERE id=?', [name, hsn_code, packaging, price, stock || 0, Number(req.params.id)]);
   saveDB();
   res.json({ success: true });
+});
+
+app.put('/api/products/:id/stock', (req, res) => {
+  const { quantity } = req.body;
+  runSql('UPDATE products SET stock = stock + ? WHERE id = ?', [Number(quantity), Number(req.params.id)]);
+  saveDB();
+  const product = queryOne('SELECT * FROM products WHERE id = ?', [Number(req.params.id)]);
+  res.json({ success: true, stock: product.stock });
 });
 
 app.delete('/api/products/:id', (req, res) => {
@@ -114,6 +122,8 @@ app.post('/api/invoices', (req, res) => {
     for (const item of items) {
       runSql('INSERT INTO invoice_items (invoice_id, product_id, quantity, price, amount) VALUES (?, ?, ?, ?, ?)',
         [invoiceId, item.product_id, item.quantity, item.price, item.amount]);
+      // Deduct stock
+      runSql('UPDATE products SET stock = stock - ? WHERE id = ?', [item.quantity, item.product_id]);
     }
     saveDB();
     res.json({ id: invoiceId, invoice_no });

@@ -176,7 +176,7 @@
     <div class="container">
       <h2>Products <button class="btn btn-sm" onclick="showAddProductModal()">+ Add Product</button></h2>
       <table class="data-table">
-        <thead><tr><th>Name</th><th>HSN</th><th>Packaging</th><th>Price (₹)</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Name</th><th>HSN</th><th>Packaging</th><th>Price (₹)</th><th>Stock</th><th>Actions</th></tr></thead>
         <tbody id="productsList"></tbody>
       </table>
     </div>
@@ -243,6 +243,7 @@
       <div class="form-group"><label>HSN Code:</label><input type="text" id="prodHsn"></div>
       <div class="form-group"><label>Packaging:</label><input type="text" id="prodPkg"></div>
       <div class="form-group"><label>Price (₹):</label><input type="number" id="prodPrice" step="0.01"></div>
+      <div class="form-group"><label>Stock Qty:</label><input type="number" id="prodStock" min="0" value="0"></div>
       <button class="btn btn-primary" onclick="saveProduct()">Save</button>
     </div>
   </div>

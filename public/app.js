@@ -101,6 +101,7 @@ function renderProductsList() {
   tbody.innerHTML = products.map(p => `
     <tr>
       <td>${esc(p.name)}</td><td>${esc(p.hsn_code)}</td><td>${esc(p.packaging)}</td><td>${p.price.toFixed(2)}</td>
+      <td style="${(p.stock || 0) <= 5 ? 'color:#e53935;font-weight:bold;' : ''}">${p.stock || 0} <button class="btn-sm" onclick="addStock(${p.id}, '${esc(p.name).replace(/'/g, "\\'")} (${esc(p.packaging).replace(/'/g, "\\'")})')" style="font-size:.7em;padding:2px 6px;">+</button></td>
       <td>
         <button class="btn-sm" onclick="editProduct(${p.id})">✏️</button>
         <button class="btn-remove" onclick="deleteProduct(${p.id})">🗑️</button>
@@ -116,6 +117,7 @@ function showAddProductModal() {
   document.getElementById('prodHsn').value = '';
   document.getElementById('prodPkg').value = '';
   document.getElementById('prodPrice').value = '';
+  document.getElementById('prodStock').value = '0';
   document.getElementById('productModal').style.display = 'flex';
 }
 
@@ -127,6 +129,7 @@ function editProduct(id) {
   document.getElementById('prodHsn').value = p.hsn_code;
   document.getElementById('prodPkg').value = p.packaging;
   document.getElementById('prodPrice').value = p.price;
+  document.getElementById('prodStock').value = p.stock || 0;
   document.getElementById('productModal').style.display = 'flex';
 }
 
@@ -136,7 +139,8 @@ async function saveProduct() {
     name: document.getElementById('prodName').value.trim(),
     hsn_code: document.getElementById('prodHsn').value.trim(),
     packaging: document.getElementById('prodPkg').value.trim(),
-    price: parseFloat(document.getElementById('prodPrice').value)
+    price: parseFloat(document.getElementById('prodPrice').value),
+    stock: parseInt(document.getElementById('prodStock').value) || 0
   };
   if (!data.name || !data.hsn_code || !data.packaging || isNaN(data.price)) return alert('Fill all fields');
   if (id) await apiFetch('/api/products/' + id, { method: 'PUT', body: JSON.stringify(data) });
@@ -144,6 +148,16 @@ async function saveProduct() {
   await loadProducts();
   renderProductsList();
   closeModal('productModal');
+}
+
+async function addStock(id, name) {
+  const qty = prompt('Add stock for ' + name + '\nEnter quantity to add:');
+  if (qty === null || qty === '') return;
+  const n = parseInt(qty);
+  if (isNaN(n) || n <= 0) return alert('Enter a valid positive number');
+  await apiFetch('/api/products/' + id + '/stock', { method: 'PUT', body: JSON.stringify({ quantity: n }) });
+  await loadProducts();
+  renderProductsList();
 }
 
 async function deleteProduct(id) {
