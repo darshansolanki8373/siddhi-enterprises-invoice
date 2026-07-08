@@ -68,11 +68,28 @@ app.put('/api/products/:id', (req, res) => {
 });
 
 app.put('/api/products/:id/stock', (req, res) => {
-  const { quantity } = req.body;
-  runSql('UPDATE products SET stock = stock + ? WHERE id = ?', [Number(quantity), Number(req.params.id)]);
+  const { quantity, type, notes } = req.body;
+  const qty = Number(quantity);
+  if (type === 'in') {
+    runSql('UPDATE products SET stock = stock + ? WHERE id = ?', [qty, Number(req.params.id)]);
+  } else {
+    runSql('UPDATE products SET stock = stock - ? WHERE id = ?', [qty, Number(req.params.id)]);
+  }
+  runSql('INSERT INTO stock_log (product_id, type, quantity, notes) VALUES (?, ?, ?, ?)',
+    [Number(req.params.id), type || 'in', qty, notes || '']);
   saveDB();
   const product = queryOne('SELECT * FROM products WHERE id = ?', [Number(req.params.id)]);
   res.json({ success: true, stock: product.stock });
+});
+
+app.get('/api/stock-log', (req, res) => {
+  const { product_id } = req.query;
+  let sql = `SELECT sl.*, p.name as product_name, p.packaging
+    FROM stock_log sl JOIN products p ON sl.product_id = p.id`;
+  const params = [];
+  if (product_id) { sql += ' WHERE sl.product_id = ?'; params.push(Number(product_id)); }
+  sql += ' ORDER BY sl.created_at DESC';
+  res.json(queryAll(sql, params));
 });
 
 app.delete('/api/products/:id', (req, res) => {
@@ -122,8 +139,10 @@ app.post('/api/invoices', (req, res) => {
     for (const item of items) {
       runSql('INSERT INTO invoice_items (invoice_id, product_id, quantity, price, amount) VALUES (?, ?, ?, ?, ?)',
         [invoiceId, item.product_id, item.quantity, item.price, item.amount]);
-      // Deduct stock
+      // Deduct stock and log
       runSql('UPDATE products SET stock = stock - ? WHERE id = ?', [item.quantity, item.product_id]);
+      runSql('INSERT INTO stock_log (product_id, type, quantity, notes) VALUES (?, ?, ?, ?)',
+        [item.product_id, 'sale', item.quantity, 'Invoice #' + invoice_no]);
     }
     saveDB();
     res.json({ id: invoiceId, invoice_no });

@@ -128,6 +128,19 @@ async function initDB() {
   // Migration: add stock column to products if missing
   try { db.run('ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0'); } catch(e) { /* column already exists */ }
 
+  // Stock log table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS stock_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (product_id) REFERENCES products(id)
+    )
+  `);
+
   saveDB();
   return db;
 }

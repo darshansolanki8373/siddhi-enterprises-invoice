@@ -48,6 +48,7 @@
       <a href="#" onclick="showSection('invoice')" class="nav-link active" id="nav-invoice">New Invoice</a>
       <a href="#" onclick="showSection('history')" class="nav-link" id="nav-history">Invoice History</a>
       <a href="#" onclick="showSection('products')" class="nav-link" id="nav-products">Products</a>
+      <a href="#" onclick="showSection('stock')" class="nav-link" id="nav-stock">📦 Stock</a>
       <a href="#" onclick="showSection('customers')" class="nav-link" id="nav-customers">Customers</a>
       <a href="#" onclick="showSection('balances')" class="nav-link" id="nav-balances">💰 Balances</a>
       <a href="#" onclick="showSection('reports')" class="nav-link" id="nav-reports">📊 Reports</a>
@@ -180,11 +181,62 @@
     <div class="container">
       <h2>Products <button class="btn btn-sm" onclick="showAddProductModal()">+ Add Product</button></h2>
       <table class="data-table">
-        <thead><tr><th>Name</th><th>HSN</th><th>Packaging</th><th>Price (₹)</th><th>Stock</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Name</th><th>HSN</th><th>Packaging</th><th>Price (₹)</th><th>Actions</th></tr></thead>
         <tbody id="productsList"></tbody>
       </table>
     </div>
   </section>
+
+  <!-- ═══ STOCK SECTION ═══ -->
+  <section id="section-stock" class="section" style="display:none">
+    <div class="container">
+      <h2>📦 Stock Management</h2>
+
+      <!-- Stock Overview -->
+      <h3 style="margin:15px 0 10px;">Current Stock</h3>
+      <table class="data-table">
+        <thead><tr><th>Product</th><th>Packaging</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="stockList"></tbody>
+      </table>
+
+      <hr style="margin:25px 0;border:1px dashed #ccc;">
+
+      <!-- Stock History -->
+      <h3 style="margin-bottom:10px;">Stock History</h3>
+      <div class="filters">
+        <div class="form-group">
+          <label>Product:</label>
+          <select id="stockLogFilter" onchange="loadStockLog()">
+            <option value="">All Products</option>
+          </select>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Product</th><th>Packaging</th><th>Type</th><th>Qty</th><th>Notes</th></tr></thead>
+        <tbody id="stockLogList"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ STOCK IN/OUT MODAL ═══ -->
+  <div id="stockModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('stockModal')">&times;</span>
+      <h3 id="stockModalTitle">Add Stock</h3>
+      <input type="hidden" id="stockProductId">
+      <div class="form-group"><label>Product:</label><input type="text" id="stockProductName" readonly></div>
+      <div class="form-group">
+        <label>Type:</label>
+        <select id="stockType">
+          <option value="in">📥 Stock In (Purchase/Received)</option>
+          <option value="out">📤 Stock Out (Damage/Return)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Quantity:</label><input type="number" id="stockQty" min="1" value="1"></div>
+      <div class="form-group"><label>Notes:</label><input type="text" id="stockNotes" placeholder="e.g. Purchased from supplier, Damaged, etc."></div>
+      <button class="btn btn-primary" onclick="saveStockEntry()">Save</button>
+    </div>
+  </div>
 
   <!-- ═══ CUSTOMERS SECTION ═══ -->
   <section id="section-customers" class="section" style="display:none">
@@ -346,7 +398,6 @@
       <div class="form-group"><label>HSN Code:</label><input type="text" id="prodHsn"></div>
       <div class="form-group"><label>Packaging:</label><input type="text" id="prodPkg"></div>
       <div class="form-group"><label>Price (₹):</label><input type="number" id="prodPrice" step="0.01"></div>
-      <div class="form-group"><label>Stock Qty:</label><input type="number" id="prodStock" min="0" value="0"></div>
       <button class="btn btn-primary" onclick="saveProduct()">Save</button>
     </div>
   </div>

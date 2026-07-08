@@ -88,6 +88,7 @@ function showSection(name) {
   if (name === 'history') { populateFilterCustomer(); loadInvoices(); }
   if (name === 'products') renderProductsList();
   if (name === 'customers') renderCustomersList();
+  if (name === 'stock') { renderStockList(); loadStockLog(); }
   if (name === 'balances') loadBalances();
   if (name === 'reports') initReport();
   if (name === 'analytics') initAnalytics();
@@ -103,7 +104,7 @@ function renderProductsList() {
   tbody.innerHTML = products.map(p => `
     <tr>
       <td>${esc(p.name)}</td><td>${esc(p.hsn_code)}</td><td>${esc(p.packaging)}</td><td>${p.price.toFixed(2)}</td>
-      <td style="${(p.stock || 0) <= 5 ? 'color:#e53935;font-weight:bold;' : ''}">${p.stock || 0} <button class="btn-sm" onclick="addStock(${p.id}, '${esc(p.name).replace(/'/g, "\\'")} (${esc(p.packaging).replace(/'/g, "\\'")})')" style="font-size:.7em;padding:2px 6px;">+</button></td>
+
       <td>
         <button class="btn-sm" onclick="editProduct(${p.id})">✏️</button>
         <button class="btn-remove" onclick="deleteProduct(${p.id})">🗑️</button>
@@ -119,7 +120,6 @@ function showAddProductModal() {
   document.getElementById('prodHsn').value = '';
   document.getElementById('prodPkg').value = '';
   document.getElementById('prodPrice').value = '';
-  document.getElementById('prodStock').value = '0';
   document.getElementById('productModal').style.display = 'flex';
 }
 
@@ -131,7 +131,6 @@ function editProduct(id) {
   document.getElementById('prodHsn').value = p.hsn_code;
   document.getElementById('prodPkg').value = p.packaging;
   document.getElementById('prodPrice').value = p.price;
-  document.getElementById('prodStock').value = p.stock || 0;
   document.getElementById('productModal').style.display = 'flex';
 }
 
@@ -141,8 +140,7 @@ async function saveProduct() {
     name: document.getElementById('prodName').value.trim(),
     hsn_code: document.getElementById('prodHsn').value.trim(),
     packaging: document.getElementById('prodPkg').value.trim(),
-    price: parseFloat(document.getElementById('prodPrice').value),
-    stock: parseInt(document.getElementById('prodStock').value) || 0
+    price: parseFloat(document.getElementById('prodPrice').value)
   };
   if (!data.name || !data.hsn_code || !data.packaging || isNaN(data.price)) return alert('Fill all fields');
   if (id) await apiFetch('/api/products/' + id, { method: 'PUT', body: JSON.stringify(data) });
@@ -150,16 +148,6 @@ async function saveProduct() {
   await loadProducts();
   renderProductsList();
   closeModal('productModal');
-}
-
-async function addStock(id, name) {
-  const qty = prompt('Add stock for ' + name + '\nEnter quantity to add:');
-  if (qty === null || qty === '') return;
-  const n = parseInt(qty);
-  if (isNaN(n) || n <= 0) return alert('Enter a valid positive number');
-  await apiFetch('/api/products/' + id + '/stock', { method: 'PUT', body: JSON.stringify({ quantity: n }) });
-  await loadProducts();
-  renderProductsList();
 }
 
 async function deleteProduct(id) {
@@ -575,6 +563,77 @@ function apiFetch(url, opts = {}) {
     if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
     return r;
   });
+}
+
+// ── Stock Management ──
+function renderStockList() {
+  const tbody = document.getElementById('stockList');
+  tbody.innerHTML = products.map(p => {
+    const stock = p.stock || 0;
+    let status = '<span style="color:#2e7d32;font-weight:bold;">In Stock</span>';
+    if (stock <= 0) status = '<span style="color:#e53935;font-weight:bold;">Out of Stock</span>';
+    else if (stock <= 10) status = '<span style="color:#e65100;font-weight:bold;">Low Stock</span>';
+    return `<tr>
+      <td>${esc(p.name)}</td><td>${esc(p.packaging)}</td>
+      <td style="font-weight:bold;font-size:1.1em;">${stock}</td>
+      <td>${status}</td>
+      <td>
+        <button class="btn-sm btn-success" onclick="showStockModal(${p.id}, 'in')" style="font-size:.75em;">📥 Stock In</button>
+        <button class="btn-sm" onclick="showStockModal(${p.id}, 'out')" style="font-size:.75em;background:#e65100;">📤 Stock Out</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Populate filter dropdown
+  const sel = document.getElementById('stockLogFilter');
+  sel.innerHTML = '<option value="">All Products</option>' +
+    products.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('');
+}
+
+function showStockModal(productId, type) {
+  const p = products.find(x => x.id === productId);
+  document.getElementById('stockModalTitle').textContent = type === 'in' ? '📥 Stock In' : '📤 Stock Out';
+  document.getElementById('stockProductId').value = productId;
+  document.getElementById('stockProductName').value = p.name + ' (' + p.packaging + ')';
+  document.getElementById('stockType').value = type;
+  document.getElementById('stockQty').value = 1;
+  document.getElementById('stockNotes').value = '';
+  document.getElementById('stockModal').style.display = 'flex';
+}
+
+async function saveStockEntry() {
+  const productId = document.getElementById('stockProductId').value;
+  const type = document.getElementById('stockType').value;
+  const quantity = parseInt(document.getElementById('stockQty').value);
+  const notes = document.getElementById('stockNotes').value.trim();
+  if (!quantity || quantity <= 0) return alert('Enter a valid quantity');
+  if (type === 'out') {
+    const p = products.find(x => x.id === parseInt(productId));
+    if ((p.stock || 0) < quantity) return alert('Not enough stock! Current: ' + (p.stock || 0));
+  }
+  await apiFetch('/api/products/' + productId + '/stock', {
+    method: 'PUT', body: JSON.stringify({ quantity, type, notes })
+  });
+  await loadProducts();
+  renderStockList();
+  loadStockLog();
+  closeModal('stockModal');
+}
+
+async function loadStockLog() {
+  const productId = document.getElementById('stockLogFilter').value;
+  const params = productId ? '?product_id=' + productId : '';
+  const logs = await apiFetch('/api/stock-log' + params).then(r => r.json());
+  document.getElementById('stockLogList').innerHTML = logs.map(l => `
+    <tr>
+      <td>${l.created_at}</td>
+      <td>${esc(l.product_name)}</td>
+      <td>${esc(l.packaging)}</td>
+      <td><span style="color:${l.type === 'in' ? '#2e7d32' : l.type === 'sale' ? '#1a237e' : '#e53935'};font-weight:bold;">${l.type === 'in' ? '📥 IN' : l.type === 'sale' ? '💵 SALE' : '📤 OUT'}</span></td>
+      <td style="font-weight:bold;color:${l.type === 'in' ? '#2e7d32' : '#e53935'};">${l.type === 'in' ? '+' : '-'}${l.quantity}</td>
+      <td>${esc(l.notes)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;">No stock history</td></tr>';
 }
 
 // ── Analytics ──
