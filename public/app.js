@@ -525,13 +525,13 @@ function printInvoice() {
   win.document.write(`
     <html><head><title>Print Invoice</title>
     <style>
-      @page { size: A4; margin: 5mm 8mm; }
+      @page { size: A4 landscape; margin: 5mm 8mm; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Segoe UI', sans-serif; }
-      .copy-section { height: 49%; overflow: visible; position: relative; padding: 4px 8px 8px 8px; border: 1px solid #000; }
+      body { font-family: 'Segoe UI', sans-serif; display: flex; gap: 4px; height: 100vh; }
+      .copy-section { flex: 1; display: flex; flex-direction: column; overflow: visible; padding: 6px 12px 8px 12px; border: 1.5px solid #000; }
       .copy-label { text-align: right; font-size: 9px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 1px; }
-      .cut-line { border: none; border-top: 1px dashed #888; margin: 0; }
-      .cut-line-label { text-align: center; font-size: 8px; color: #999; margin: 0; line-height: 1.2; }
+      .cut-line { display: none; }
+      .cut-line-label { display: none; }
       .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #1a237e; padding-bottom: 4px; margin-bottom: 5px; }
       .print-invoice .pi-header h2 { color: #1a237e; font-size: 14px; }
       .print-invoice .pi-header h3 { font-size: 11px; }
@@ -543,7 +543,8 @@ function printInvoice() {
       .print-invoice .pi-totals { margin-left: auto; width: 190px; }
       .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; line-height: 1.3; }
       .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 2px; }
-      .invoice-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; padding: 0 8px; }
+      .print-invoice { flex: 1; }
+      .invoice-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding: 0 8px; }
       .signature-block { text-align: center; font-size: 9px; }
       .signature-line { width: 120px; border-bottom: 1px solid #333; margin-bottom: 2px; height: 18px; }
       .thank-you { font-size: 9px; color: #666; font-style: italic; }
