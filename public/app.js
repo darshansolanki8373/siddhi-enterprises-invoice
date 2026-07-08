@@ -90,6 +90,7 @@ function showSection(name) {
   if (name === 'customers') renderCustomersList();
   if (name === 'balances') loadBalances();
   if (name === 'reports') initReport();
+  if (name === 'analytics') initAnalytics();
 }
 
 // ── Products ──
@@ -573,6 +574,161 @@ function apiFetch(url, opts = {}) {
   return fetch(API + url, opts).then(r => {
     if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
     return r;
+  });
+}
+
+// ── Analytics ──
+let bestSellingChartInstance = null;
+let productTrendChartInstance = null;
+
+function initAnalytics() {
+  const sel = document.getElementById('analyticsYear');
+  if (!sel.options.length) {
+    const curYear = new Date().getFullYear();
+    for (let y = curYear; y >= curYear - 5; y--) {
+      sel.innerHTML += `<option value="${y}">${y}</option>`;
+    }
+  }
+  const prodSel = document.getElementById('analyticsProduct');
+  if (prodSel.options.length <= 1) {
+    const unique = [];
+    products.forEach(p => {
+      const key = p.name + '|' + p.packaging;
+      if (!unique.find(u => u.key === key)) unique.push({ key, id: p.id, name: p.name, packaging: p.packaging });
+    });
+    prodSel.innerHTML = '<option value="">-- Select Product --</option>' +
+      unique.map(u => `<option value="${u.id}">${esc(u.name)} (${esc(u.packaging)})</option>`).join('');
+  }
+  loadAnalytics();
+}
+
+async function loadAnalytics() {
+  const year = document.getElementById('analyticsYear').value;
+  const view = document.getElementById('analyticsView').value;
+  const data = await apiFetch(`/api/reports/product-sales?year=${year}&view=${view}`).then(r => r.json());
+
+  // Aggregate by product
+  const prodMap = {};
+  data.forEach(r => {
+    const key = r.name + ' (' + r.packaging + ')';
+    if (!prodMap[key]) prodMap[key] = { qty: 0, revenue: 0 };
+    prodMap[key].qty += r.quantity;
+    prodMap[key].revenue += r.amount;
+  });
+  const sorted = Object.entries(prodMap).sort((a, b) => b[1].qty - a[1].qty);
+  const top10 = sorted.slice(0, 10);
+
+  // Top products table
+  document.getElementById('topProductsList').innerHTML = sorted.map((s, i) =>
+    `<tr><td>${i + 1}</td><td>${esc(s[0].split(' (')[0])}</td><td>${esc(s[0].match(/\((.+)\)/)?.[1] || '')}</td><td>${s[1].qty}</td><td>₹${s[1].revenue.toFixed(2)}</td></tr>`
+  ).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;">No data</td></tr>';
+
+  // Best selling chart
+  if (bestSellingChartInstance) bestSellingChartInstance.destroy();
+  const ctx = document.getElementById('bestSellingChart').getContext('2d');
+  bestSellingChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top10.map(s => s[0]),
+      datasets: [{
+        label: 'Quantity Sold',
+        data: top10.map(s => s[1].qty),
+        backgroundColor: '#3f51b5'
+      }, {
+        label: 'Revenue (₹)',
+        data: top10.map(s => s[1].revenue),
+        backgroundColor: '#ff9800',
+        yAxisID: 'y1'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Quantity' } },
+        y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Revenue (₹)' }, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+
+  // Aggregate by period for trend
+  loadProductTrend();
+}
+
+async function loadProductTrend() {
+  const productId = document.getElementById('analyticsProduct').value;
+  const section = document.getElementById('productTrendSection');
+  if (!productId) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  const year = document.getElementById('analyticsYear').value;
+  const view = document.getElementById('analyticsView').value;
+  const data = await apiFetch(`/api/reports/product-sales?year=${year}&view=${view}`).then(r => r.json());
+  const filtered = data.filter(r => r.id === parseInt(productId));
+
+  // Aggregate by period
+  const periodMap = {};
+  filtered.forEach(r => {
+    const month = parseInt(r.invoice_date.split('-')[1]);
+    let periodKey;
+    if (view === 'monthly') periodKey = r.invoice_date.substring(0, 7);
+    else if (view === 'quarterly') periodKey = 'Q' + Math.ceil(month / 3);
+    else periodKey = year;
+    if (!periodMap[periodKey]) periodMap[periodKey] = { qty: 0, revenue: 0 };
+    periodMap[periodKey].qty += r.quantity;
+    periodMap[periodKey].revenue += r.amount;
+  });
+
+  // Fill missing periods
+  let labels = [];
+  if (view === 'monthly') {
+    for (let m = 1; m <= 12; m++) {
+      const key = year + '-' + String(m).padStart(2, '0');
+      labels.push(key);
+      if (!periodMap[key]) periodMap[key] = { qty: 0, revenue: 0 };
+    }
+  } else if (view === 'quarterly') {
+    labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+    labels.forEach(q => { if (!periodMap[q]) periodMap[q] = { qty: 0, revenue: 0 }; });
+  } else {
+    labels = [year];
+    if (!periodMap[year]) periodMap[year] = { qty: 0, revenue: 0 };
+  }
+
+  const totalQty = Object.values(periodMap).reduce((s, p) => s + p.qty, 0);
+  const totalRev = Object.values(periodMap).reduce((s, p) => s + p.revenue, 0);
+  document.getElementById('prodStatQty').textContent = totalQty;
+  document.getElementById('prodStatRevenue').textContent = '₹' + totalRev.toFixed(2);
+
+  if (productTrendChartInstance) productTrendChartInstance.destroy();
+  const ctx = document.getElementById('productTrendChart').getContext('2d');
+  productTrendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Quantity Sold',
+        data: labels.map(l => periodMap[l].qty),
+        borderColor: '#3f51b5',
+        backgroundColor: 'rgba(63,81,181,0.1)',
+        fill: true, tension: 0.3
+      }, {
+        label: 'Revenue (₹)',
+        data: labels.map(l => periodMap[l].revenue),
+        borderColor: '#ff9800',
+        backgroundColor: 'rgba(255,152,0,0.1)',
+        fill: true, tension: 0.3,
+        yAxisID: 'y1'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Quantity' } },
+        y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Revenue (₹)' }, grid: { drawOnChartArea: false } }
+      }
+    }
   });
 }
 

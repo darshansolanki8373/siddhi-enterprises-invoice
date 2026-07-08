@@ -217,6 +217,19 @@ app.get('/api/reports/monthly', (req, res) => {
   res.json(queryAll(sql, params));
 });
 
+app.get('/api/reports/product-sales', (req, res) => {
+  const { year, view } = req.query;
+  if (!year) return res.status(400).json({ error: 'Year required' });
+  const sql = `SELECT p.id, p.name, p.packaging, ii.quantity, ii.amount, i.invoice_date
+    FROM invoice_items ii
+    JOIN invoices i ON ii.invoice_id = i.id
+    JOIN products p ON ii.product_id = p.id
+    WHERE i.invoice_date >= ? AND i.invoice_date <= ?
+    ORDER BY i.invoice_date`;
+  const rows = queryAll(sql, [year + '-01-01', year + '-12-31']);
+  res.json(rows);
+});
+
 // ── Start ──
 async function start() {
   await initDB();

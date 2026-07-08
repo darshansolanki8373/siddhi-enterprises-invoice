@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="/icon-192.svg">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <!-- Login Screen -->
@@ -50,6 +51,7 @@
       <a href="#" onclick="showSection('customers')" class="nav-link" id="nav-customers">Customers</a>
       <a href="#" onclick="showSection('balances')" class="nav-link" id="nav-balances">💰 Balances</a>
       <a href="#" onclick="showSection('reports')" class="nav-link" id="nav-reports">📊 Reports</a>
+      <a href="#" onclick="showSection('analytics')" class="nav-link" id="nav-analytics">📈 Analytics</a>
       <a href="#" onclick="switchBillType()" class="nav-link">🔄 Switch Bill</a>
       <a href="#" onclick="doLogout()" class="nav-link nav-logout">🚪 Logout</a>
     </div>
@@ -246,6 +248,61 @@
 
       <div class="actions" id="reportActions" style="display:none; margin-top:15px;">
         <button class="btn btn-success" onclick="downloadReportCSV()">📥 Download CSV</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ANALYTICS SECTION ═══ -->
+  <section id="section-analytics" class="section" style="display:none">
+    <div class="container">
+      <h2>📈 Product Sales Analytics</h2>
+
+      <!-- Period Selector -->
+      <div class="filters">
+        <div class="form-group">
+          <label>Year:</label>
+          <select id="analyticsYear" onchange="loadAnalytics()"></select>
+        </div>
+        <div class="form-group">
+          <label>View:</label>
+          <select id="analyticsView" onchange="loadAnalytics()">
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Best Selling Products Chart -->
+      <div style="margin:20px 0;">
+        <h3 style="margin-bottom:10px;">Best Selling Products</h3>
+        <div style="position:relative;height:350px;"><canvas id="bestSellingChart"></canvas></div>
+      </div>
+
+      <!-- Top Products Table -->
+      <table class="data-table" id="topProductsTable">
+        <thead><tr><th>#</th><th>Product</th><th>Packaging</th><th>Qty Sold</th><th>Revenue (₹)</th></tr></thead>
+        <tbody id="topProductsList"></tbody>
+      </table>
+
+      <hr style="margin:30px 0;border:1px dashed #ccc;">
+
+      <!-- Product-wise Drilldown -->
+      <h3 style="margin-bottom:10px;">Product-wise Sales Trend</h3>
+      <div class="filters">
+        <div class="form-group">
+          <label>Select Product:</label>
+          <select id="analyticsProduct" onchange="loadProductTrend()">
+            <option value="">-- Select Product --</option>
+          </select>
+        </div>
+      </div>
+      <div id="productTrendSection" style="display:none;">
+        <div style="display:flex;gap:15px;flex-wrap:wrap;margin:15px 0;">
+          <div class="stat-card"><div class="stat-label">Total Qty Sold</div><div class="stat-value" id="prodStatQty">0</div></div>
+          <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="prodStatRevenue">₹0</div></div>
+        </div>
+        <div style="position:relative;height:300px;"><canvas id="productTrendChart"></canvas></div>
       </div>
     </div>
   </section>
