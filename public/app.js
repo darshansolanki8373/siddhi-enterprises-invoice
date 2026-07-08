@@ -528,25 +528,25 @@ function printInvoice() {
       @page { size: A4; margin: 5mm 8mm; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Segoe UI', sans-serif; }
-      .copy-section { height: 49%; overflow: visible; position: relative; padding: 4px 8px 24px 8px; border: 1px solid #000; }
-      .copy-label { text-align: right; font-size: 8px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 1px; }
+      .copy-section { height: 49%; overflow: visible; position: relative; padding: 4px 8px 8px 8px; border: 1px solid #000; }
+      .copy-label { text-align: right; font-size: 9px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 1px; }
       .cut-line { border: none; border-top: 1px dashed #888; margin: 0; }
       .cut-line-label { text-align: center; font-size: 8px; color: #999; margin: 0; line-height: 1.2; }
-      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #1a237e; padding-bottom: 4px; margin-bottom: 4px; }
-      .print-invoice .pi-header h2 { color: #1a237e; font-size: 12px; }
-      .print-invoice .pi-header h3 { font-size: 10px; }
-      .print-invoice .pi-header p { font-size: 8px; color: #555; margin: 0; line-height: 1.3; }
-      .print-invoice .pi-customer { background: #f5f5f5; padding: 3px 6px; border-radius: 3px; margin-bottom: 4px; font-size: 8px; line-height: 1.3; }
-      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 3px; }
-      .print-invoice th { background: #1a237e; color: #fff; padding: 2px 4px; font-size: 7.5px; text-align: left; }
-      .print-invoice td { padding: 1px 4px; border-bottom: 1px solid #ddd; font-size: 8px; line-height: 1.2; }
-      .print-invoice .pi-totals { margin-left: auto; width: 180px; }
-      .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 0; font-size: 8px; line-height: 1.3; }
+      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #1a237e; padding-bottom: 4px; margin-bottom: 5px; }
+      .print-invoice .pi-header h2 { color: #1a237e; font-size: 14px; }
+      .print-invoice .pi-header h3 { font-size: 11px; }
+      .print-invoice .pi-header p { font-size: 9px; color: #555; margin: 0; line-height: 1.3; }
+      .print-invoice .pi-customer { background: #f5f5f5; padding: 4px 6px; border-radius: 3px; margin-bottom: 5px; font-size: 9px; line-height: 1.3; }
+      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+      .print-invoice th { background: #1a237e; color: #fff; padding: 2px 4px; font-size: 8.5px; text-align: left; }
+      .print-invoice td { padding: 1.5px 4px; border-bottom: 1px solid #ddd; font-size: 9px; line-height: 1.2; }
+      .print-invoice .pi-totals { margin-left: auto; width: 190px; }
+      .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; line-height: 1.3; }
       .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 2px; }
       .invoice-footer { margin-top: 4px; padding: 0 8px; }
-      .signature-block { float: right; text-align: center; font-size: 8px; margin-top: 2px; }
+      .signature-block { float: right; text-align: center; font-size: 9px; margin-top: 2px; }
       .signature-line { width: 120px; border-bottom: 1px solid #333; margin-bottom: 2px; height: 18px; }
-      .thank-you { clear: both; text-align: center; font-size: 8px; color: #666; font-style: italic; padding-top: 2px; }
+      .thank-you { clear: both; text-align: center; font-size: 9px; color: #666; font-style: italic; padding-top: 2px; }
       @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style></head><body>
       ${copyHTML('Customer Copy')}
