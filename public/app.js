@@ -887,16 +887,15 @@ async function downloadProductStockReport() {
   if (!month) return alert('Select a month');
   const data = await apiFetch('/api/reports/product-stock-report?month=' + month).then(r => r.json());
   if (!data.length) return alert('No products found');
-  const headers = ['Product', 'HSN Code', 'Packaging', 'Price', 'Qty Sold', 'Sales Revenue', 'Current Stock'];
+  const headers = ['Product', 'HSN Code', 'Packaging', 'Qty Sold', 'Current Stock'];
   const rows = data.map(r => [
     '"' + (r.name || '').replace(/"/g, '""') + '"',
-    r.hsn_code, r.packaging, r.price.toFixed(2),
-    r.qty_sold, r.revenue.toFixed(2), r.current_stock
+    r.hsn_code, r.packaging,
+    r.qty_sold, r.current_stock
   ]);
   rows.push([
-    'TOTAL', '', '', '',
+    'TOTAL', '', '',
     data.reduce((s, r) => s + r.qty_sold, 0),
-    data.reduce((s, r) => s + r.revenue, 0).toFixed(2),
     data.reduce((s, r) => s + r.current_stock, 0)
   ]);
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
