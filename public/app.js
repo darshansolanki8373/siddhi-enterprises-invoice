@@ -574,10 +574,17 @@ async function viewCreditDetails(customerId, name) {
   let total = 0;
   document.getElementById('creditDetailsList').innerHTML = invoices.map(inv => {
     total += inv.grand_total;
-    return `<tr><td>${inv.invoice_no}</td><td>${inv.invoice_date}</td><td>₹${inv.grand_total.toFixed(2)}</td><td><span class="bill-badge-sm">${inv.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</span></td></tr>`;
+    return `<tr><td>${inv.invoice_no}</td><td>${inv.invoice_date}</td><td>₹${inv.grand_total.toFixed(2)}</td><td><span class="bill-badge-sm">${inv.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</span></td><td><button class="btn-sm btn-success" onclick="markAsPaid(${inv.id}, ${customerId}, '${name.replace(/'/g, "\\'")}')" style="font-size:.75em;">✅ Paid</button></td></tr>`;
   }).join('');
   document.getElementById('creditDetailsTotal').textContent = 'Total Credit: ₹' + total.toFixed(2);
   document.getElementById('creditDetailsModal').style.display = 'flex';
+}
+
+async function markAsPaid(invoiceId, customerId, customerName) {
+  if (!confirm('Mark this invoice as paid?')) return;
+  await apiFetch('/api/invoices/' + invoiceId + '/mark-paid', { method: 'PUT' });
+  await viewCreditDetails(customerId, customerName);
+  await loadBalances();
 }
 
 // Number to words (Indian system)

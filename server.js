@@ -171,11 +171,17 @@ app.get('/api/customer-balances', (req, res) => {
 
 app.get('/api/customer-balances/:id', (req, res) => {
   const invoices = queryAll(`
-    SELECT invoice_no, invoice_date, grand_total, payment_mode, bill_type
+    SELECT id, invoice_no, invoice_date, grand_total, payment_mode, bill_type
     FROM invoices WHERE customer_id = ? AND payment_mode = 'credit'
     ORDER BY invoice_date DESC
   `, [Number(req.params.id)]);
   res.json(invoices);
+});
+
+app.put('/api/invoices/:id/mark-paid', (req, res) => {
+  runSql('UPDATE invoices SET payment_mode = ? WHERE id = ?', ['cash', Number(req.params.id)]);
+  saveDB();
+  res.json({ success: true });
 });
 
 // ── Start ──
