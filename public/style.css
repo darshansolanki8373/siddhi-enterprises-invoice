@@ -106,27 +106,58 @@ body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: 
 .btn-block { width: 100%; padding: 10px; font-size: 1em; margin-top: 10px; }
 .nav-logout { color: #ffcdd2 !important; margin-left: auto; }
 
+/* Tablet Responsive */
+@media (max-width: 1024px) {
+  .invoice-container { max-width: 100%; padding: 20px; }
+  .container { max-width: 100%; }
+  .totals-section { width: 100%; }
+  .modal-lg { width: 95%; }
+  .print-invoice .pi-totals { width: 100%; }
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .navbar { flex-direction: column; height: auto; padding: 10px; }
-  .nav-links { flex-wrap: wrap; gap: 2px; justify-content: center; }
-  .nav-link { padding: 6px 10px; font-size: .8em; }
+  .navbar { flex-direction: column; height: auto; padding: 10px; gap: 8px; }
+  .brand { margin-right: 0; font-size: 1.1em; }
+  .nav-links { flex-wrap: wrap; gap: 4px; justify-content: center; }
+  .nav-link { padding: 8px 12px; font-size: .8em; min-height: 44px; display: flex; align-items: center; }
+  .section { padding: 10px; }
   .invoice-header { flex-direction: column; gap: 10px; }
   .invoice-meta { text-align: left; }
   .meta-row { justify-content: flex-start; }
+  .meta-row input { width: 100%; }
   .invoice-container { padding: 15px; }
-  .form-row select { min-width: 180px; }
-  #itemsTable { font-size: .75em; }
+  .form-row { flex-direction: column; align-items: stretch; }
+  .form-row label { min-width: auto; }
+  .form-row select, .form-row input[type="date"] { min-width: auto; width: 100%; }
+  .items-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #itemsTable { min-width: 600px; font-size: .75em; }
   #itemsTable th, #itemsTable td { padding: 4px 3px; }
   #itemsTable input[type="number"] { width: 50px; }
   .totals-section { width: 100%; }
   .actions { flex-direction: column; }
-  .actions .btn { width: 100%; }
+  .actions .btn { width: 100%; min-height: 44px; }
   .filters { flex-direction: column; }
-  .modal-content { width: 95%; margin: 10px; }
+  .filters .form-group { width: 100%; }
+  .filters input, .filters select { width: 100%; }
+  .modal-content { width: 95%; margin: 10px; padding: 16px; }
   .modal-lg { width: 95%; }
   .container { padding: 12px; }
-  .data-table { font-size: .75em; }
+  .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table th, .data-table td { white-space: nowrap; }
   .print-invoice .pi-totals { width: 100%; }
   .login-box { width: 90%; padding: 25px; }
+  .customer-details { word-break: break-word; }
+  .customer-details span { display: block; }
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 36px; }
+}
+
+/* Small phones */
+@media (max-width: 400px) {
+  .login-box { width: 95%; padding: 20px; }
+  .login-box h1 { font-size: 1.2em; }
+  .company-info h1 { font-size: 1.2em; }
+  .invoice-meta h2 { font-size: 1.1em; }
+  .nav-link { padding: 6px 8px; font-size: .75em; }
 }
