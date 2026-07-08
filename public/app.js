@@ -536,7 +536,7 @@ function printInvoice() {
       .print-invoice .pi-header h2 { color: #000; font-size: 14px; font-weight: bold; }
       .print-invoice .pi-header h3 { font-size: 11px; color: #000; }
       .print-invoice .pi-header p { font-size: 9px; color: #333; margin: 0; line-height: 1.3; }
-      .print-invoice .pi-customer { background: #f0f0f0; padding: 4px 6px; border-radius: 3px; margin-bottom: 5px; font-size: 9px; line-height: 1.3; }
+      .print-invoice .pi-customer { padding: 4px 6px; border-radius: 3px; margin-bottom: 5px; font-size: 9px; line-height: 1.3; }
       .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
       .print-invoice th { background: #000; color: #fff; padding: 2px 4px; font-size: 8.5px; text-align: left; }
       .print-invoice th:last-child { text-align: right; }
