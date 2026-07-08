@@ -230,6 +230,19 @@ app.put('/api/invoices/:id/mark-paid', (req, res) => {
 });
 
 // ── Reports API ──
+app.get('/api/reports/unpaid', (req, res) => {
+  const { from_date, to_date, brand } = req.query;
+  let sql = `SELECT i.invoice_no, i.invoice_date, c.name as customer_name, i.grand_total
+             FROM invoices i JOIN customers c ON i.customer_id = c.id
+             WHERE i.payment_mode = 'credit'`;
+  const params = [];
+  if (brand) { sql += ' AND i.brand = ?'; params.push(brand); }
+  if (from_date) { sql += ' AND i.invoice_date >= ?'; params.push(from_date); }
+  if (to_date) { sql += ' AND i.invoice_date <= ?'; params.push(to_date); }
+  sql += ' ORDER BY i.invoice_date DESC';
+  res.json(queryAll(sql, params));
+});
+
 app.get('/api/reports/monthly', (req, res) => {
   const { month, bill_type, brand } = req.query;
   let sql = `SELECT i.invoice_no, i.invoice_date, c.name as customer_name, i.bill_type,

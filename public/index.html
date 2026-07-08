@@ -62,6 +62,7 @@
       <a href="#" onclick="showSection('stock')" class="nav-link" id="nav-stock">📦 Stock</a>
       <a href="#" onclick="showSection('customers')" class="nav-link" id="nav-customers">Customers</a>
       <a href="#" onclick="showSection('balances')" class="nav-link" id="nav-balances">💰 Balances</a>
+      <a href="#" onclick="showSection('unpaid')" class="nav-link" id="nav-unpaid">📋 Unpaid</a>
       <a href="#" onclick="showSection('reports')" class="nav-link" id="nav-reports">📊 Reports</a>
       <a href="#" onclick="showSection('analytics')" class="nav-link" id="nav-analytics">📈 Analytics</a>
       <a href="#" onclick="switchBrand()" class="nav-link">🏷️ Switch Brand</a>
@@ -206,6 +207,7 @@
 
       <!-- Stock Overview -->
       <h3 style="margin:15px 0 10px;">Current Stock</h3>
+      <button class="btn btn-success" onclick="downloadStockPDF()" style="margin-bottom:10px;">📥 Download Stock Report</button>
       <table class="data-table">
         <thead><tr><th>Product</th><th>Packaging</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="stockList"></tbody>
@@ -268,6 +270,30 @@
       <table class="data-table">
         <thead><tr><th>Customer</th><th>Mobile</th><th>Credit Balance (₹)</th><th>Total Sales (₹)</th><th>Actions</th></tr></thead>
         <tbody id="balancesList"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ UNPAID REPORT SECTION ═══ -->
+  <section id="section-unpaid" class="section" style="display:none">
+    <div class="container">
+      <h2>📋 Unpaid Customer Report</h2>
+      <div class="filters">
+        <div class="form-group">
+          <label>From Date</label>
+          <input type="date" id="unpaidFromDate">
+        </div>
+        <div class="form-group">
+          <label>To Date</label>
+          <input type="date" id="unpaidToDate">
+        </div>
+        <button class="btn btn-primary" onclick="loadUnpaidReport()">Generate Report</button>
+        <button class="btn btn-success" onclick="downloadUnpaidPDF()">📥 Download PDF</button>
+      </div>
+      <div id="unpaidStats" style="display:flex;gap:16px;margin:16px 0;"></div>
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Invoice #</th><th>Customer Name</th><th>Amount (₹)</th></tr></thead>
+        <tbody id="unpaidList"></tbody>
       </table>
     </div>
   </section>

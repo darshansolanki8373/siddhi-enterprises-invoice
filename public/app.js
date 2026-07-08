@@ -106,6 +106,7 @@ function showSection(name) {
   if (name === 'customers') renderCustomersList();
   if (name === 'stock') { renderStockList(); loadStockLog(); }
   if (name === 'balances') loadBalances();
+  if (name === 'unpaid') loadUnpaidReport();
   if (name === 'reports') initReport();
   if (name === 'analytics') initAnalytics();
 }
@@ -620,6 +621,41 @@ function renderStockList() {
     products.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('');
 }
 
+function downloadStockPDF() {
+  const half = Math.ceil(products.length / 2);
+  const col1 = products.slice(0, half);
+  const col2 = products.slice(half);
+  const maxRows = Math.max(col1.length, col2.length);
+  let rows = '';
+  for (let i = 0; i < maxRows; i++) {
+    const left = col1[i] ? `<td>${esc(col1[i].name)} (${esc(col1[i].packaging)})</td><td>${col1[i].stock || 0}</td><td></td>` : '<td></td><td></td><td></td>';
+    const right = col2[i] ? `<td>${esc(col2[i].name)} (${esc(col2[i].packaging)})</td><td>${col2[i].stock || 0}</td><td></td>` : '<td></td><td></td><td></td>';
+    rows += `<tr>${left}<td class="gap"></td>${right}</tr>`;
+  }
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>Stock Report</title>
+    <style>
+      @page { size: A4; margin: 8mm; }
+      body { font-family: 'Segoe UI', sans-serif; padding: 10px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #000; padding: 3px 5px; font-size: 9px; line-height: 1.2; }
+      th { background: #000; color: #fff; text-align: left; }
+      td.gap, th.gap { border: none; background: #fff; width: 10px; }
+      th:nth-child(2), th:nth-child(3), th:nth-child(6), th:nth-child(7),
+      td:nth-child(2), td:nth-child(3), td:nth-child(6), td:nth-child(7) { width: 40px; text-align: center; }
+      @media print { body { margin: 0; } }
+    </style></head><body>
+      <table>
+        <thead><tr><th>Item</th><th>Qty</th><th></th><th class="gap"></th><th>Item</th><th>Qty</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body></html>
+  `);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 300);
+}
+
 function showStockModal(productId, type) {
   const p = products.find(x => x.id === productId);
   document.getElementById('stockModalTitle').textContent = type === 'in' ? '📥 Stock In' : '📤 Stock Out';
@@ -937,6 +973,56 @@ async function downloadProductStockReport() {
   a.download = `product-stock-report-${month}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ── Unpaid Report ──
+async function loadUnpaidReport() {
+  const from = document.getElementById('unpaidFromDate').value;
+  const to = document.getElementById('unpaidToDate').value;
+  let url = '/api/reports/unpaid?brand=' + currentBrand;
+  if (from) url += '&from_date=' + from;
+  if (to) url += '&to_date=' + to;
+  const data = await apiFetch(url).then(r => r.json());
+  const totalAmount = data.reduce((sum, r) => sum + r.grand_total, 0);
+  document.getElementById('unpaidStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Unpaid Invoices</div><div class="stat-value">${data.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Unpaid Amount</div><div class="stat-value">₹${totalAmount.toFixed(2)}</div></div>
+  `;
+  document.getElementById('unpaidList').innerHTML = data.map(r => `
+    <tr>
+      <td>${r.invoice_date}</td>
+      <td>${r.invoice_no}</td>
+      <td>${esc(r.customer_name)}</td>
+      <td>₹${r.grand_total.toFixed(2)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;">No unpaid invoices found</td></tr>';
+}
+
+function downloadUnpaidPDF() {
+  const stats = document.getElementById('unpaidStats').innerHTML;
+  const rows = document.getElementById('unpaidList').innerHTML;
+  const from = document.getElementById('unpaidFromDate').value || 'All';
+  const to = document.getElementById('unpaidToDate').value || 'All';
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>Unpaid Report</title>
+    <style>
+      @page { size: A4; margin: 10mm; }
+      body { font-family: 'Segoe UI', sans-serif; padding: 20px; }
+      table { width: 100%; border-collapse: collapse; }
+      th { background: #000; color: #fff; padding: 6px 8px; font-size: 12px; text-align: left; }
+      td { padding: 5px 8px; border-bottom: 1px solid #ccc; font-size: 12px; }
+      .total { text-align: right; font-weight: bold; font-size: 13px; margin-top: 10px; }
+      @media print { body { margin: 0; } }
+    </style></head><body>
+      <table>
+        <thead><tr><th>Date</th><th>Invoice #</th><th>Customer Name</th><th>Amount (₹)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body></html>
+  `);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 300);
 }
 
 async function loadBalances() {
