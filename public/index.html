@@ -28,6 +28,17 @@
   <!-- Main App (hidden until login) -->
   <div id="mainApp" style="display:none">
 
+  <!-- Brand Selection -->
+  <div id="brandScreen" class="login-screen" style="display:none">
+    <div class="login-box">
+      <h1>🏪 Siddhi Enterprises</h1>
+      <p class="login-subtitle">Select Brand</p>
+      <button class="btn btn-primary btn-block" onclick="selectBrand('pushp')" style="margin-bottom:10px;background:#e65100;">🌶️ Pushp Masala</button>
+      <button class="btn btn-success btn-block" onclick="selectBrand('sapat')" style="background:#2e7d32;">☕ Sapat Chai</button>
+      <button class="btn btn-secondary btn-block" onclick="doLogout()" style="margin-top:15px">🚪 Logout</button>
+    </div>
+  </div>
+
   <!-- Bill Type Selection -->
   <div id="billTypeScreen" class="login-screen" style="display:none">
     <div class="login-box">
@@ -43,7 +54,7 @@
   <div id="appContent" style="display:none">
   <!-- Navigation -->
   <nav class="navbar">
-    <div class="brand">🏪 Siddhi Enterprises <span id="billTypeBadge" class="bill-badge"></span></div>
+    <div class="brand">🏪 Siddhi Enterprises <span id="brandBadge" class="bill-badge"></span> <span id="billTypeBadge" class="bill-badge"></span></div>
     <div class="nav-links">
       <a href="#" onclick="showSection('invoice')" class="nav-link active" id="nav-invoice">New Invoice</a>
       <a href="#" onclick="showSection('history')" class="nav-link" id="nav-history">Invoice History</a>
@@ -53,6 +64,7 @@
       <a href="#" onclick="showSection('balances')" class="nav-link" id="nav-balances">💰 Balances</a>
       <a href="#" onclick="showSection('reports')" class="nav-link" id="nav-reports">📊 Reports</a>
       <a href="#" onclick="showSection('analytics')" class="nav-link" id="nav-analytics">📈 Analytics</a>
+      <a href="#" onclick="switchBrand()" class="nav-link">🏷️ Switch Brand</a>
       <a href="#" onclick="switchBillType()" class="nav-link">🔄 Switch Bill</a>
       <a href="#" onclick="doLogout()" class="nav-link nav-logout">🚪 Logout</a>
     </div>

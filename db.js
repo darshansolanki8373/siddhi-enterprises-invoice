@@ -26,7 +26,8 @@ async function initDB() {
       hsn_code TEXT NOT NULL,
       packaging TEXT NOT NULL,
       price REAL NOT NULL,
-      stock INTEGER NOT NULL DEFAULT 0
+      stock INTEGER NOT NULL DEFAULT 0,
+      brand TEXT NOT NULL DEFAULT 'pushp'
     )
   `);
   db.run(`
@@ -105,8 +106,11 @@ async function initDB() {
       ['Sapat Pariwar Chai Premium', '0902', '500g', 180],
       ['Sapat Pariwar Chai Premium', '0902', '1kg', 350],
     ];
-    const stmt = db.prepare('INSERT INTO products (name, hsn_code, packaging, price) VALUES (?, ?, ?, ?)');
-    for (const p of products) { stmt.run(p); }
+    const stmt = db.prepare('INSERT INTO products (name, hsn_code, packaging, price, brand) VALUES (?, ?, ?, ?, ?)');
+    for (const p of products) {
+      const brand = p[0].startsWith('Sapat') ? 'sapat' : 'pushp';
+      stmt.run([...p, brand]);
+    }
     stmt.free();
   }
 
@@ -127,6 +131,12 @@ async function initDB() {
   try { db.run('ALTER TABLE invoices ADD COLUMN payment_mode TEXT NOT NULL DEFAULT \'cash\''); } catch(e) { /* column already exists */ }
   // Migration: add stock column to products if missing
   try { db.run('ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0'); } catch(e) { /* column already exists */ }
+  // Migration: add brand column to products if missing
+  try { db.run('ALTER TABLE products ADD COLUMN brand TEXT NOT NULL DEFAULT \'pushp\''); } catch(e) { /* column already exists */ }
+  // Migration: add brand column to invoices if missing
+  try { db.run('ALTER TABLE invoices ADD COLUMN brand TEXT NOT NULL DEFAULT \'pushp\''); } catch(e) { /* column already exists */ }
+  // Update existing seed products brand
+  db.run("UPDATE products SET brand = 'sapat' WHERE brand = 'pushp' AND name LIKE 'Sapat%'");
 
   // Stock log table
   db.run(`

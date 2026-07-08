@@ -49,20 +49,25 @@ app.use('/api', (req, res, next) => {
 
 // ── Products API ──
 app.get('/api/products', (req, res) => {
-  res.json(queryAll('SELECT * FROM products ORDER BY name, packaging'));
+  const { brand } = req.query;
+  let sql = 'SELECT * FROM products';
+  const params = [];
+  if (brand) { sql += ' WHERE brand = ?'; params.push(brand); }
+  sql += ' ORDER BY name, packaging';
+  res.json(queryAll(sql, params));
 });
 
 app.post('/api/products', (req, res) => {
-  const { name, hsn_code, packaging, price, stock } = req.body;
-  runSql('INSERT INTO products (name, hsn_code, packaging, price, stock) VALUES (?, ?, ?, ?, ?)', [name, hsn_code, packaging, price, stock || 0]);
+  const { name, hsn_code, packaging, price, brand } = req.body;
+  runSql('INSERT INTO products (name, hsn_code, packaging, price, brand) VALUES (?, ?, ?, ?, ?)', [name, hsn_code, packaging, price, brand || 'pushp']);
   const id = getLastId();
   saveDB();
   res.json({ id });
 });
 
 app.put('/api/products/:id', (req, res) => {
-  const { name, hsn_code, packaging, price, stock } = req.body;
-  runSql('UPDATE products SET name=?, hsn_code=?, packaging=?, price=?, stock=? WHERE id=?', [name, hsn_code, packaging, price, stock || 0, Number(req.params.id)]);
+  const { name, hsn_code, packaging, price } = req.body;
+  runSql('UPDATE products SET name=?, hsn_code=?, packaging=?, price=? WHERE id=?', [name, hsn_code, packaging, price, Number(req.params.id)]);
   saveDB();
   res.json({ success: true });
 });
@@ -83,11 +88,12 @@ app.put('/api/products/:id/stock', (req, res) => {
 });
 
 app.get('/api/stock-log', (req, res) => {
-  const { product_id } = req.query;
+  const { product_id, brand } = req.query;
   let sql = `SELECT sl.*, p.name as product_name, p.packaging
-    FROM stock_log sl JOIN products p ON sl.product_id = p.id`;
+    FROM stock_log sl JOIN products p ON sl.product_id = p.id WHERE 1=1`;
   const params = [];
-  if (product_id) { sql += ' WHERE sl.product_id = ?'; params.push(Number(product_id)); }
+  if (product_id) { sql += ' AND sl.product_id = ?'; params.push(Number(product_id)); }
+  if (brand) { sql += ' AND p.brand = ?'; params.push(brand); }
   sql += ' ORDER BY sl.created_at DESC';
   res.json(queryAll(sql, params));
 });
@@ -126,15 +132,19 @@ app.delete('/api/customers/:id', (req, res) => {
 
 // ── Invoices API ──
 app.get('/api/invoices/next-number', (req, res) => {
-  const row = queryOne('SELECT COALESCE(MAX(invoice_no), 0) + 1 as next_no FROM invoices');
+  const { brand } = req.query;
+  let sql = 'SELECT COALESCE(MAX(invoice_no), 0) + 1 as next_no FROM invoices';
+  const params = [];
+  if (brand) { sql += ' WHERE brand = ?'; params.push(brand); }
+  const row = queryOne(sql, params);
   res.json({ next_no: row.next_no });
 });
 
 app.post('/api/invoices', (req, res) => {
-  const { invoice_no, invoice_date, customer_id, bill_type, items, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode } = req.body;
+  const { invoice_no, invoice_date, customer_id, bill_type, items, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode, brand } = req.body;
   try {
-    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, bill_type, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [invoice_no, invoice_date, customer_id, bill_type || 'gst', subtotal, cgst_rate || 0, sgst_rate || 0, cgst_total || 0, sgst_total || 0, discount_rate || 0, discount_total || 0, grand_total, payment_mode || 'cash']);
+    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, bill_type, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode, brand) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [invoice_no, invoice_date, customer_id, bill_type || 'gst', subtotal, cgst_rate || 0, sgst_rate || 0, cgst_total || 0, sgst_total || 0, discount_rate || 0, discount_total || 0, grand_total, payment_mode || 'cash', brand || 'pushp']);
     const invoiceId = getLastId();
     for (const item of items) {
       runSql('INSERT INTO invoice_items (invoice_id, product_id, quantity, price, amount) VALUES (?, ?, ?, ?, ?)',
@@ -153,11 +163,12 @@ app.post('/api/invoices', (req, res) => {
 });
 
 app.get('/api/invoices', (req, res) => {
-  const { customer_id, from_date, to_date } = req.query;
+  const { customer_id, from_date, to_date, brand } = req.query;
   let sql = `SELECT i.*, c.name as customer_name, c.address as customer_address,
              c.mob_no as customer_mob, c.gst_no as customer_gst
              FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE 1=1`;
   const params = [];
+  if (brand) { sql += ' AND i.brand = ?'; params.push(brand); }
   if (customer_id) { sql += ' AND i.customer_id = ?'; params.push(Number(customer_id)); }
   if (from_date) { sql += ' AND i.invoice_date >= ?'; params.push(from_date); }
   if (to_date) { sql += ' AND i.invoice_date <= ?'; params.push(to_date); }
@@ -184,27 +195,32 @@ app.delete('/api/invoices/:id', (req, res) => {
 
 // ── Customer Balances API ──
 app.get('/api/customer-balances', (req, res) => {
+  const { brand } = req.query;
+  let brandFilter = '';
+  const params = [];
+  if (brand) { brandFilter = ' AND i.brand = ?'; params.push(brand); }
   const balances = queryAll(`
     SELECT c.id, c.name, c.mob_no,
       COALESCE(SUM(CASE WHEN i.payment_mode = 'credit' THEN i.grand_total ELSE 0 END), 0) as total_credit,
       COALESCE(SUM(CASE WHEN i.payment_mode = 'cash' THEN i.grand_total ELSE 0 END), 0) as total_cash,
       COALESCE(SUM(i.grand_total), 0) as total_sales
     FROM customers c
-    LEFT JOIN invoices i ON c.id = i.customer_id
+    LEFT JOIN invoices i ON c.id = i.customer_id${brandFilter}
     GROUP BY c.id
     HAVING total_credit > 0
     ORDER BY total_credit DESC
-  `);
+  `, params);
   res.json(balances);
 });
 
 app.get('/api/customer-balances/:id', (req, res) => {
-  const invoices = queryAll(`
-    SELECT id, invoice_no, invoice_date, grand_total, payment_mode, bill_type
-    FROM invoices WHERE customer_id = ? AND payment_mode = 'credit'
-    ORDER BY invoice_date DESC
-  `, [Number(req.params.id)]);
-  res.json(invoices);
+  const { brand } = req.query;
+  let sql = `SELECT id, invoice_no, invoice_date, grand_total, payment_mode, bill_type
+    FROM invoices WHERE customer_id = ? AND payment_mode = 'credit'`;
+  const params = [Number(req.params.id)];
+  if (brand) { sql += ' AND brand = ?'; params.push(brand); }
+  sql += ' ORDER BY invoice_date DESC';
+  res.json(queryAll(sql, params));
 });
 
 app.put('/api/invoices/:id/mark-paid', (req, res) => {
@@ -215,12 +231,13 @@ app.put('/api/invoices/:id/mark-paid', (req, res) => {
 
 // ── Reports API ──
 app.get('/api/reports/monthly', (req, res) => {
-  const { month, bill_type } = req.query;
+  const { month, bill_type, brand } = req.query;
   let sql = `SELECT i.invoice_no, i.invoice_date, c.name as customer_name, i.bill_type,
              i.subtotal, i.cgst_rate, i.sgst_rate, i.cgst_total, i.sgst_total,
              i.discount_total, i.grand_total
              FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE 1=1`;
   const params = [];
+  if (brand) { sql += ' AND i.brand = ?'; params.push(brand); }
   if (month) {
     sql += ` AND i.invoice_date >= ? AND i.invoice_date <= ?`;
     params.push(month + '-01');
@@ -237,32 +254,39 @@ app.get('/api/reports/monthly', (req, res) => {
 });
 
 app.get('/api/reports/product-sales', (req, res) => {
-  const { year, view } = req.query;
+  const { year, view, brand } = req.query;
   if (!year) return res.status(400).json({ error: 'Year required' });
-  const sql = `SELECT p.id, p.name, p.packaging, ii.quantity, ii.amount, i.invoice_date
+  let sql = `SELECT p.id, p.name, p.packaging, ii.quantity, ii.amount, i.invoice_date
     FROM invoice_items ii
     JOIN invoices i ON ii.invoice_id = i.id
     JOIN products p ON ii.product_id = p.id
-    WHERE i.invoice_date >= ? AND i.invoice_date <= ?
-    ORDER BY i.invoice_date`;
-  const rows = queryAll(sql, [year + '-01-01', year + '-12-31']);
+    WHERE i.invoice_date >= ? AND i.invoice_date <= ?`;
+  const params = [year + '-01-01', year + '-12-31'];
+  if (brand) { sql += ' AND p.brand = ?'; params.push(brand); }
+  sql += ' ORDER BY i.invoice_date';
+  const rows = queryAll(sql, params);
   res.json(rows);
 });
 
 app.get('/api/reports/product-stock-report', (req, res) => {
-  const { month } = req.query;
+  const { month, brand } = req.query;
   if (!month) return res.status(400).json({ error: 'Month required' });
   const [y, m] = month.split('-').map(Number);
   const lastDay = new Date(y, m, 0).getDate();
   const fromDate = month + '-01';
   const toDate = month + '-' + String(lastDay).padStart(2, '0');
-  const sql = `SELECT p.id, p.name, p.hsn_code, p.packaging, p.price, p.stock as current_stock,
+  let sql = `SELECT p.id, p.name, p.hsn_code, p.packaging, p.price, p.stock as current_stock,
     COALESCE(SUM(ii.quantity), 0) as qty_sold,
     COALESCE(SUM(ii.amount), 0) as revenue
     FROM products p
     LEFT JOIN invoice_items ii ON p.id = ii.product_id
       AND ii.invoice_id IN (SELECT id FROM invoices WHERE invoice_date >= ? AND invoice_date <= ?)
-    GROUP BY p.id
+    WHERE 1=1`;
+  const params = [fromDate, toDate];
+  if (brand) { sql += ' AND p.brand = ?'; params.push(brand); }
+  sql += ' GROUP BY p.id ORDER BY qty_sold DESC, p.name';
+  res.json(queryAll(sql, params));
+});
     ORDER BY qty_sold DESC, p.name`;
   res.json(queryAll(sql, [fromDate, toDate]));
 });
