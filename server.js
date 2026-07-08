@@ -287,9 +287,6 @@ app.get('/api/reports/product-stock-report', (req, res) => {
   sql += ' GROUP BY p.id ORDER BY qty_sold DESC, p.name';
   res.json(queryAll(sql, params));
 });
-    ORDER BY qty_sold DESC, p.name`;
-  res.json(queryAll(sql, [fromDate, toDate]));
-});
 
 // ── Start ──
 async function start() {
