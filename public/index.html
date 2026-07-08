@@ -49,6 +49,7 @@
       <a href="#" onclick="showSection('products')" class="nav-link" id="nav-products">Products</a>
       <a href="#" onclick="showSection('customers')" class="nav-link" id="nav-customers">Customers</a>
       <a href="#" onclick="showSection('balances')" class="nav-link" id="nav-balances">💰 Balances</a>
+      <a href="#" onclick="showSection('reports')" class="nav-link" id="nav-reports">📊 Reports</a>
       <a href="#" onclick="switchBillType()" class="nav-link">🔄 Switch Bill</a>
       <a href="#" onclick="doLogout()" class="nav-link nav-logout">🚪 Logout</a>
     </div>
@@ -202,6 +203,50 @@
         <thead><tr><th>Customer</th><th>Mobile</th><th>Credit Balance (₹)</th><th>Total Sales (₹)</th><th>Actions</th></tr></thead>
         <tbody id="balancesList"></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- ═══ REPORTS SECTION ═══ -->
+  <section id="section-reports" class="section" style="display:none">
+    <div class="container">
+      <h2>📊 Sales Reports</h2>
+      <div class="filters">
+        <div class="form-group">
+          <label>Month:</label>
+          <input type="month" id="reportMonth">
+        </div>
+        <div class="form-group">
+          <label>Bill Type:</label>
+          <select id="reportBillType">
+            <option value="all">All Bills</option>
+            <option value="gst">GST Bills Only</option>
+            <option value="non-gst">Non-GST Bills Only</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="loadReport()">🔍 Generate</button>
+      </div>
+
+      <!-- Stats Cards -->
+      <div id="reportStats" style="display:none; margin: 20px 0;">
+        <div style="display:flex; gap:15px; flex-wrap:wrap;">
+          <div class="stat-card"><div class="stat-label">Total Invoices</div><div class="stat-value" id="statCount">0</div></div>
+          <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value" id="statSales">₹0</div></div>
+          <div class="stat-card"><div class="stat-label">Total GST Collected</div><div class="stat-value" id="statGst">₹0</div></div>
+          <div class="stat-card"><div class="stat-label">Total Discount</div><div class="stat-value" id="statDiscount">₹0</div></div>
+          <div class="stat-card"><div class="stat-label">Average Invoice</div><div class="stat-value" id="statAvg">₹0</div></div>
+        </div>
+      </div>
+
+      <!-- Report Table -->
+      <table class="data-table" id="reportTable" style="display:none;">
+        <thead><tr><th>Inv #</th><th>Date</th><th>Customer</th><th>Bill Type</th><th>Subtotal (₹)</th><th>CGST (₹)</th><th>SGST (₹)</th><th>Discount (₹)</th><th>Grand Total (₹)</th></tr></thead>
+        <tbody id="reportList"></tbody>
+        <tfoot id="reportFooter"></tfoot>
+      </table>
+
+      <div class="actions" id="reportActions" style="display:none; margin-top:15px;">
+        <button class="btn btn-success" onclick="downloadReportCSV()">📥 Download CSV</button>
+      </div>
     </div>
   </section>
 

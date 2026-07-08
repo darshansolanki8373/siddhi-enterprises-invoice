@@ -89,6 +89,7 @@ function showSection(name) {
   if (name === 'products') renderProductsList();
   if (name === 'customers') renderCustomersList();
   if (name === 'balances') loadBalances();
+  if (name === 'reports') initReport();
 }
 
 // ── Products ──
@@ -576,6 +577,96 @@ function apiFetch(url, opts = {}) {
 }
 
 // ── Customer Balances ──
+let lastReportData = [];
+
+function initReport() {
+  if (!document.getElementById('reportMonth').value) {
+    const now = new Date();
+    document.getElementById('reportMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+}
+
+async function loadReport() {
+  const month = document.getElementById('reportMonth').value;
+  const billType = document.getElementById('reportBillType').value;
+  if (!month) return alert('Select a month');
+  const params = new URLSearchParams({ month, bill_type: billType });
+  const data = await apiFetch('/api/reports/monthly?' + params).then(r => r.json());
+  lastReportData = data;
+
+  // Stats
+  const count = data.length;
+  const totalSales = data.reduce((s, r) => s + r.grand_total, 0);
+  const totalGst = data.reduce((s, r) => s + (r.cgst_total || 0) + (r.sgst_total || 0), 0);
+  const totalDiscount = data.reduce((s, r) => s + (r.discount_total || 0), 0);
+  const avg = count > 0 ? totalSales / count : 0;
+  document.getElementById('statCount').textContent = count;
+  document.getElementById('statSales').textContent = '₹' + totalSales.toFixed(2);
+  document.getElementById('statGst').textContent = '₹' + totalGst.toFixed(2);
+  document.getElementById('statDiscount').textContent = '₹' + totalDiscount.toFixed(2);
+  document.getElementById('statAvg').textContent = '₹' + avg.toFixed(2);
+  document.getElementById('reportStats').style.display = 'block';
+
+  // Table
+  document.getElementById('reportList').innerHTML = data.map(r => `
+    <tr>
+      <td>${r.invoice_no}</td>
+      <td>${r.invoice_date}</td>
+      <td>${esc(r.customer_name)}</td>
+      <td>${r.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</td>
+      <td>${r.subtotal.toFixed(2)}</td>
+      <td>${(r.cgst_total || 0).toFixed(2)}</td>
+      <td>${(r.sgst_total || 0).toFixed(2)}</td>
+      <td>${(r.discount_total || 0).toFixed(2)}</td>
+      <td>${r.grand_total.toFixed(2)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;">No invoices found</td></tr>';
+
+  document.getElementById('reportFooter').innerHTML = data.length ? `
+    <tr style="font-weight:bold;background:#e8eaf6;">
+      <td colspan="4">TOTAL</td>
+      <td>${data.reduce((s, r) => s + r.subtotal, 0).toFixed(2)}</td>
+      <td>${data.reduce((s, r) => s + (r.cgst_total || 0), 0).toFixed(2)}</td>
+      <td>${data.reduce((s, r) => s + (r.sgst_total || 0), 0).toFixed(2)}</td>
+      <td>${totalDiscount.toFixed(2)}</td>
+      <td>${totalSales.toFixed(2)}</td>
+    </tr>
+  ` : '';
+
+  document.getElementById('reportTable').style.display = data.length ? 'table' : 'none';
+  document.getElementById('reportActions').style.display = data.length ? 'flex' : 'none';
+}
+
+function downloadReportCSV() {
+  if (!lastReportData.length) return;
+  const month = document.getElementById('reportMonth').value;
+  const billType = document.getElementById('reportBillType').value;
+  const headers = ['Invoice No', 'Date', 'Customer', 'Bill Type', 'Subtotal', 'CGST', 'SGST', 'Discount', 'Grand Total'];
+  const rows = lastReportData.map(r => [
+    r.invoice_no, r.invoice_date, '"' + (r.customer_name || '').replace(/"/g, '""') + '"',
+    r.bill_type === 'non-gst' ? 'Non-GST' : 'GST',
+    r.subtotal.toFixed(2), (r.cgst_total || 0).toFixed(2), (r.sgst_total || 0).toFixed(2),
+    (r.discount_total || 0).toFixed(2), r.grand_total.toFixed(2)
+  ]);
+  // Add totals row
+  rows.push([
+    '', '', 'TOTAL', '',
+    lastReportData.reduce((s, r) => s + r.subtotal, 0).toFixed(2),
+    lastReportData.reduce((s, r) => s + (r.cgst_total || 0), 0).toFixed(2),
+    lastReportData.reduce((s, r) => s + (r.sgst_total || 0), 0).toFixed(2),
+    lastReportData.reduce((s, r) => s + (r.discount_total || 0), 0).toFixed(2),
+    lastReportData.reduce((s, r) => s + r.grand_total, 0).toFixed(2)
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sales-report-${month}-${billType}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function loadBalances() {
   const balances = await apiFetch('/api/customer-balances').then(r => r.json());
   document.getElementById('balancesList').innerHTML = balances.map(b => `

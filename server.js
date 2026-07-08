@@ -194,6 +194,29 @@ app.put('/api/invoices/:id/mark-paid', (req, res) => {
   res.json({ success: true });
 });
 
+// ── Reports API ──
+app.get('/api/reports/monthly', (req, res) => {
+  const { month, bill_type } = req.query;
+  let sql = `SELECT i.invoice_no, i.invoice_date, c.name as customer_name, i.bill_type,
+             i.subtotal, i.cgst_rate, i.sgst_rate, i.cgst_total, i.sgst_total,
+             i.discount_total, i.grand_total
+             FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE 1=1`;
+  const params = [];
+  if (month) {
+    sql += ` AND i.invoice_date >= ? AND i.invoice_date <= ?`;
+    params.push(month + '-01');
+    const [y, m] = month.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    params.push(month + '-' + String(lastDay).padStart(2, '0'));
+  }
+  if (bill_type && bill_type !== 'all') {
+    sql += ' AND i.bill_type = ?';
+    params.push(bill_type);
+  }
+  sql += ' ORDER BY i.invoice_date, i.invoice_no';
+  res.json(queryAll(sql, params));
+});
+
 // ── Start ──
 async function start() {
   await initDB();
