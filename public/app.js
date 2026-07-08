@@ -312,16 +312,18 @@ function recalcAll() {
   });
   const cgstRate = billType === 'gst' ? (parseFloat(document.getElementById('cgstRate').value) || 0) : 0;
   const sgstRate = billType === 'gst' ? (parseFloat(document.getElementById('sgstRate').value) || 0) : 0;
-  const discountRate = billType === 'gst' ? (parseFloat(document.getElementById('discountRate').value) || 0) : 0;
-  const cgst = subtotal * (cgstRate / 100);
-  const sgst = subtotal * (sgstRate / 100);
-  const taxedTotal = subtotal + cgst + sgst;
-  const discount = taxedTotal * (discountRate / 100);
-  const grandTotal = billType === 'gst' ? taxedTotal - discount : subtotal;
+  const totalGstRate = cgstRate + sgstRate;
+  // Reverse GST: taxable = original / (1 + GST%), so that taxable + GST = original
+  const taxableAmount = billType === 'gst' && totalGstRate > 0 ? subtotal / (1 + totalGstRate / 100) : subtotal;
+  const discount = subtotal - taxableAmount;
+  const cgst = taxableAmount * (cgstRate / 100);
+  const sgst = taxableAmount * (sgstRate / 100);
+  const grandTotal = billType === 'gst' ? taxableAmount + cgst + sgst : subtotal;
   document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+  document.getElementById('discountTotal').textContent = '-₹' + discount.toFixed(2);
+  document.getElementById('taxableAmount').textContent = '₹' + taxableAmount.toFixed(2);
   document.getElementById('cgstTotal').textContent = '₹' + cgst.toFixed(2);
   document.getElementById('sgstTotal').textContent = '₹' + sgst.toFixed(2);
-  document.getElementById('discountTotal').textContent = '-₹' + discount.toFixed(2);
   document.getElementById('grandTotal').textContent = '₹' + grandTotal.toFixed(2);
   document.getElementById('amountWords').textContent = numberToWords(grandTotal);
 }
@@ -338,12 +340,12 @@ function getInvoiceData() {
   const subtotal = items.reduce((s, i) => s + i.amount, 0);
   const cgstRate = billType === 'gst' ? (parseFloat(document.getElementById('cgstRate').value) || 0) : 0;
   const sgstRate = billType === 'gst' ? (parseFloat(document.getElementById('sgstRate').value) || 0) : 0;
-  const discountRate = billType === 'gst' ? (parseFloat(document.getElementById('discountRate').value) || 0) : 0;
-  const cgst = subtotal * (cgstRate / 100);
-  const sgst = subtotal * (sgstRate / 100);
-  const taxedTotal = subtotal + cgst + sgst;
-  const discount = taxedTotal * (discountRate / 100);
-  const grandTotal = billType === 'gst' ? taxedTotal - discount : subtotal;
+  const totalGstRate = cgstRate + sgstRate;
+  const taxableAmount = billType === 'gst' && totalGstRate > 0 ? subtotal / (1 + totalGstRate / 100) : subtotal;
+  const discount = subtotal - taxableAmount;
+  const cgst = taxableAmount * (cgstRate / 100);
+  const sgst = taxableAmount * (sgstRate / 100);
+  const grandTotal = billType === 'gst' ? taxableAmount + cgst + sgst : subtotal;
   return {
     invoice_no: parseInt(document.getElementById('invoiceNo').value),
     invoice_date: document.getElementById('invoiceDate').value,
@@ -351,7 +353,7 @@ function getInvoiceData() {
     bill_type: billType,
     payment_mode: document.getElementById('paymentMode').value,
     items, subtotal, cgst_rate: cgstRate, sgst_rate: sgstRate, cgst_total: cgst, sgst_total: sgst,
-    discount_rate: discountRate, discount_total: discount, grand_total: grandTotal
+    discount_rate: totalGstRate, discount_total: discount, grand_total: grandTotal
   };
 }
 
@@ -453,13 +455,14 @@ async function viewInvoice(id) {
         </tbody>
       </table>
       <div class="pi-totals">
-        <div><span>Subtotal:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
+        <div><span>Original Amount:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
         ${inv.bill_type !== 'non-gst' ? `
+        ${(inv.discount_total || 0) > 0 ? `<div style="color:#e65100;"><span>Reverse GST Discount:</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
+        <div><span>Taxable Amount:</span><span>₹${(inv.subtotal - (inv.discount_total || 0)).toFixed(2)}</span></div>
         <div><span>CGST (${(inv.cgst_rate || 2.5)}%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
         <div><span>SGST (${(inv.sgst_rate || 2.5)}%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
-        ${(inv.discount_total || 0) > 0 ? `<div><span>Discount (${inv.discount_rate}%):</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
         ` : ''}
-        <div class="pi-grand"><span>Grand Total:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
+        <div class="pi-grand"><span>Final Payable:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
       </div>
       <div style="clear:both;width:100%;font-size:.85em;font-style:italic;margin-top:8px;text-align:left;"><strong>In Words:</strong> ${numberToWords(inv.grand_total)}</div>
     </div>
