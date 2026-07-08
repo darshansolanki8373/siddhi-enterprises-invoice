@@ -361,6 +361,10 @@ async function saveInvoice() {
   const data = getInvoiceData();
   if (!data.customer_id) return alert('Select a customer');
   if (!data.items.length) return alert('Add at least one item');
+  if (data.bill_type === 'gst') {
+    const cust = customers.find(c => c.id === data.customer_id);
+    if (!cust || !cust.gst_no || !cust.gst_no.trim()) return alert('GST Bill requires customer GST number. Please update the customer details.');
+  }
 
   const res = await apiFetch('/api/invoices', {
     method: 'POST', body: JSON.stringify(data)
