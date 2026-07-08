@@ -882,6 +882,33 @@ function downloadReportCSV() {
   URL.revokeObjectURL(url);
 }
 
+async function downloadProductStockReport() {
+  const month = document.getElementById('reportMonth').value;
+  if (!month) return alert('Select a month');
+  const data = await apiFetch('/api/reports/product-stock-report?month=' + month).then(r => r.json());
+  if (!data.length) return alert('No products found');
+  const headers = ['Product', 'HSN Code', 'Packaging', 'Price', 'Qty Sold', 'Sales Revenue', 'Current Stock'];
+  const rows = data.map(r => [
+    '"' + (r.name || '').replace(/"/g, '""') + '"',
+    r.hsn_code, r.packaging, r.price.toFixed(2),
+    r.qty_sold, r.revenue.toFixed(2), r.current_stock
+  ]);
+  rows.push([
+    'TOTAL', '', '', '',
+    data.reduce((s, r) => s + r.qty_sold, 0),
+    data.reduce((s, r) => s + r.revenue, 0).toFixed(2),
+    data.reduce((s, r) => s + r.current_stock, 0)
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `product-stock-report-${month}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function loadBalances() {
   const balances = await apiFetch('/api/customer-balances').then(r => r.json());
   document.getElementById('balancesList').innerHTML = balances.map(b => `

@@ -249,6 +249,24 @@ app.get('/api/reports/product-sales', (req, res) => {
   res.json(rows);
 });
 
+app.get('/api/reports/product-stock-report', (req, res) => {
+  const { month } = req.query;
+  if (!month) return res.status(400).json({ error: 'Month required' });
+  const [y, m] = month.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  const fromDate = month + '-01';
+  const toDate = month + '-' + String(lastDay).padStart(2, '0');
+  const sql = `SELECT p.id, p.name, p.hsn_code, p.packaging, p.price, p.stock as current_stock,
+    COALESCE(SUM(ii.quantity), 0) as qty_sold,
+    COALESCE(SUM(ii.amount), 0) as revenue
+    FROM products p
+    LEFT JOIN invoice_items ii ON p.id = ii.product_id
+      AND ii.invoice_id IN (SELECT id FROM invoices WHERE invoice_date >= ? AND invoice_date <= ?)
+    GROUP BY p.id
+    ORDER BY qty_sold DESC, p.name`;
+  res.json(queryAll(sql, [fromDate, toDate]));
+});
+
 // ── Start ──
 async function start() {
   await initDB();
