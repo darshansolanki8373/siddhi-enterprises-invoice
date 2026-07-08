@@ -513,11 +513,11 @@ function printInvoice() {
       <div class="copy-label">${label}</div>
       ${invoiceHTML}
       <div class="invoice-footer">
+        <div class="thank-you">Thank you for your business!</div>
         <div class="signature-block">
           <div class="signature-line"></div>
           <div>Authorized Signature</div>
         </div>
-        <div class="thank-you">Thank you for your business!</div>
       </div>
     </div>
   `;
@@ -543,10 +543,10 @@ function printInvoice() {
       .print-invoice .pi-totals { margin-left: auto; width: 190px; }
       .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; line-height: 1.3; }
       .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 2px; }
-      .invoice-footer { margin-top: 4px; padding: 0 8px; }
-      .signature-block { float: right; text-align: center; font-size: 9px; margin-top: 2px; }
+      .invoice-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; padding: 0 8px; }
+      .signature-block { text-align: center; font-size: 9px; }
       .signature-line { width: 120px; border-bottom: 1px solid #333; margin-bottom: 2px; height: 18px; }
-      .thank-you { clear: both; text-align: center; font-size: 9px; color: #666; font-style: italic; padding-top: 2px; }
+      .thank-you { font-size: 9px; color: #666; font-style: italic; }
       @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style></head><body>
       ${copyHTML('Customer Copy')}
