@@ -457,7 +457,7 @@ async function viewInvoice(id) {
       <div class="pi-totals">
         <div><span>Original Amount:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
         ${inv.bill_type !== 'non-gst' ? `
-        ${(inv.discount_total || 0) > 0 ? `<div style="color:#e65100;"><span>Reverse GST Discount:</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
+        ${(inv.discount_total || 0) > 0 ? `<div style="color:#e65100;"><span>Special Discount:</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
         <div><span>Taxable Amount:</span><span>₹${(inv.subtotal - (inv.discount_total || 0)).toFixed(2)}</span></div>
         <div><span>CGST (${(inv.cgst_rate || 2.5)}%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
         <div><span>SGST (${(inv.sgst_rate || 2.5)}%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
