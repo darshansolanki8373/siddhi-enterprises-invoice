@@ -55,6 +55,7 @@ async function initDB() {
       discount_total REAL NOT NULL DEFAULT 0,
       grand_total REAL NOT NULL DEFAULT 0,
       payment_mode TEXT NOT NULL DEFAULT 'cash',
+      amount_paid REAL NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now','localtime')),
       FOREIGN KEY (customer_id) REFERENCES customers(id)
     )
@@ -135,6 +136,8 @@ async function initDB() {
   try { db.run('ALTER TABLE products ADD COLUMN brand TEXT NOT NULL DEFAULT \'pushp\''); } catch(e) { /* column already exists */ }
   // Migration: add brand column to invoices if missing
   try { db.run('ALTER TABLE invoices ADD COLUMN brand TEXT NOT NULL DEFAULT \'pushp\''); } catch(e) { /* column already exists */ }
+  // Migration: add amount_paid column to invoices if missing
+  try { db.run('ALTER TABLE invoices ADD COLUMN amount_paid REAL NOT NULL DEFAULT 0'); } catch(e) { /* column already exists */ }
   // Update existing seed products brand
   db.run("UPDATE products SET brand = 'sapat' WHERE brand = 'pushp' AND name LIKE 'Sapat%'");
 

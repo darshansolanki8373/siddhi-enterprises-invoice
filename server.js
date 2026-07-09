@@ -141,10 +141,11 @@ app.get('/api/invoices/next-number', (req, res) => {
 });
 
 app.post('/api/invoices', (req, res) => {
-  const { invoice_no, invoice_date, customer_id, bill_type, items, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode, brand } = req.body;
+  const { invoice_no, invoice_date, customer_id, bill_type, items, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode, amount_paid, brand } = req.body;
   try {
-    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, bill_type, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode, brand) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [invoice_no, invoice_date, customer_id, bill_type || 'gst', subtotal, cgst_rate || 0, sgst_rate || 0, cgst_total || 0, sgst_total || 0, discount_rate || 0, discount_total || 0, grand_total, payment_mode || 'cash', brand || 'pushp']);
+    const paidAmount = amount_paid != null ? Number(amount_paid) : (payment_mode === 'cash' ? grand_total : 0);
+    runSql('INSERT INTO invoices (invoice_no, invoice_date, customer_id, bill_type, subtotal, cgst_rate, sgst_rate, cgst_total, sgst_total, discount_rate, discount_total, grand_total, payment_mode, amount_paid, brand) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [invoice_no, invoice_date, customer_id, bill_type || 'gst', subtotal, cgst_rate || 0, sgst_rate || 0, cgst_total || 0, sgst_total || 0, discount_rate || 0, discount_total || 0, grand_total, payment_mode || 'cash', paidAmount, brand || 'pushp']);
     const invoiceId = getLastId();
     for (const item of items) {
       runSql('INSERT INTO invoice_items (invoice_id, product_id, quantity, price, amount) VALUES (?, ?, ?, ?, ?)',
@@ -201,8 +202,8 @@ app.get('/api/customer-balances', (req, res) => {
   if (brand) { brandFilter = ' AND i.brand = ?'; params.push(brand); }
   const balances = queryAll(`
     SELECT c.id, c.name, c.mob_no,
-      COALESCE(SUM(CASE WHEN i.payment_mode = 'credit' THEN i.grand_total ELSE 0 END), 0) as total_credit,
-      COALESCE(SUM(CASE WHEN i.payment_mode = 'cash' THEN i.grand_total ELSE 0 END), 0) as total_cash,
+      COALESCE(SUM(i.grand_total - i.amount_paid), 0) as total_credit,
+      COALESCE(SUM(i.amount_paid), 0) as total_cash,
       COALESCE(SUM(i.grand_total), 0) as total_sales
     FROM customers c
     LEFT JOIN invoices i ON c.id = i.customer_id${brandFilter}
@@ -215,8 +216,9 @@ app.get('/api/customer-balances', (req, res) => {
 
 app.get('/api/customer-balances/:id', (req, res) => {
   const { brand } = req.query;
-  let sql = `SELECT id, invoice_no, invoice_date, grand_total, payment_mode, bill_type
-    FROM invoices WHERE customer_id = ? AND payment_mode = 'credit'`;
+  let sql = `SELECT id, invoice_no, invoice_date, grand_total, amount_paid, payment_mode, bill_type,
+    (grand_total - amount_paid) as credit_remaining
+    FROM invoices WHERE customer_id = ? AND (grand_total - amount_paid) > 0`;
   const params = [Number(req.params.id)];
   if (brand) { sql += ' AND brand = ?'; params.push(brand); }
   sql += ' ORDER BY invoice_date DESC';
@@ -224,7 +226,13 @@ app.get('/api/customer-balances/:id', (req, res) => {
 });
 
 app.put('/api/invoices/:id/mark-paid', (req, res) => {
-  runSql('UPDATE invoices SET payment_mode = ? WHERE id = ?', ['cash', Number(req.params.id)]);
+  const { amount } = req.body || {};
+  const invoice = queryOne('SELECT * FROM invoices WHERE id = ?', [Number(req.params.id)]);
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+  const payAmount = amount != null ? Number(amount) : (invoice.grand_total - invoice.amount_paid);
+  const newAmountPaid = invoice.amount_paid + payAmount;
+  const newMode = newAmountPaid >= invoice.grand_total ? 'cash' : invoice.payment_mode;
+  runSql('UPDATE invoices SET amount_paid = ?, payment_mode = ? WHERE id = ?', [newAmountPaid, newMode, Number(req.params.id)]);
   saveDB();
   res.json({ success: true });
 });
@@ -234,7 +242,7 @@ app.get('/api/reports/unpaid', (req, res) => {
   const { from_date, to_date, brand } = req.query;
   let sql = `SELECT i.invoice_no, i.invoice_date, c.name as customer_name, i.grand_total
              FROM invoices i JOIN customers c ON i.customer_id = c.id
-             WHERE i.payment_mode = 'credit'`;
+             WHERE (i.grand_total - i.amount_paid) > 0`;
   const params = [];
   if (brand) { sql += ' AND i.brand = ?'; params.push(brand); }
   if (from_date) { sql += ' AND i.invoice_date >= ?'; params.push(from_date); }

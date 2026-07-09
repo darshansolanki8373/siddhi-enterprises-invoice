@@ -114,10 +114,15 @@
       <div class="customer-section">
         <div class="form-row">
           <label>Payment Mode:</label>
-          <select id="paymentMode">
+          <select id="paymentMode" onchange="toggleAmountPaid()">
             <option value="cash">💵 Cash</option>
             <option value="credit">📝 Credit</option>
+            <option value="partial">💳 Partial Payment</option>
           </select>
+        </div>
+        <div class="form-row" id="amountPaidRow" style="display:none;">
+          <label>Amount Paid (₹):</label>
+          <input type="number" id="amountPaid" min="0" step="0.01" placeholder="Enter amount paid">
         </div>
       </div>
 
@@ -404,7 +409,7 @@
       <span class="close" onclick="closeModal('creditDetailsModal')">&times;</span>
       <h3 id="creditDetailsTitle">Credit Details</h3>
       <table class="data-table">
-        <thead><tr><th>Inv #</th><th>Date</th><th>Amount (₹)</th><th>Type</th><th>Action</th></tr></thead>
+        <thead><tr><th>Inv #</th><th>Date</th><th>Total (₹)</th><th>Paid (₹)</th><th>Remaining (₹)</th><th>Type</th><th>Action</th></tr></thead>
         <tbody id="creditDetailsList"></tbody>
       </table>
       <div id="creditDetailsTotal" style="text-align:right;font-weight:bold;margin-top:10px;"></div>

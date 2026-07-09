@@ -111,6 +111,13 @@ function showSection(name) {
   if (name === 'analytics') initAnalytics();
 }
 
+// ── Partial Payment Toggle ──
+function toggleAmountPaid() {
+  const mode = document.getElementById('paymentMode').value;
+  document.getElementById('amountPaidRow').style.display = mode === 'partial' ? 'flex' : 'none';
+  if (mode !== 'partial') document.getElementById('amountPaid').value = '';
+}
+
 // ── Products ──
 async function loadProducts() {
   products = await apiFetch('/api/products?brand=' + currentBrand).then(r => r.json());
@@ -353,12 +360,16 @@ function getInvoiceData() {
   const cgst = taxableAmount * (cgstRate / 100);
   const sgst = taxableAmount * (sgstRate / 100);
   const grandTotal = billType === 'gst' ? taxableAmount + cgst + sgst : subtotal;
+  const paymentMode = document.getElementById('paymentMode').value;
+  const actualPaymentMode = paymentMode === 'partial' ? 'credit' : paymentMode;
+  const amountPaid = paymentMode === 'cash' ? grandTotal : (paymentMode === 'partial' ? (parseFloat(document.getElementById('amountPaid').value) || 0) : 0);
   return {
     invoice_no: parseInt(document.getElementById('invoiceNo').value),
     invoice_date: document.getElementById('invoiceDate').value,
     customer_id: parseInt(document.getElementById('customerSelect').value),
     bill_type: billType,
-    payment_mode: document.getElementById('paymentMode').value,
+    payment_mode: actualPaymentMode,
+    amount_paid: amountPaid,
     brand: currentBrand,
     items, subtotal, cgst_rate: cgstRate, sgst_rate: sgstRate, cgst_total: cgst, sgst_total: sgst,
     discount_rate: totalGstRate, discount_total: discount, grand_total: grandTotal
@@ -369,6 +380,7 @@ async function saveInvoice() {
   const data = getInvoiceData();
   if (!data.customer_id) return alert('Select a customer');
   if (!data.items.length) return alert('Add at least one item');
+  if (data.payment_mode === 'credit' && data.amount_paid > 0 && data.amount_paid >= data.grand_total) return alert('Partial amount must be less than grand total. Use Cash payment instead.');
   if (data.bill_type === 'gst') {
     const cust = customers.find(c => c.id === data.customer_id);
     if (!cust || !cust.gst_no || !cust.gst_no.trim()) return alert('GST Bill requires customer GST number. Please update the customer details.');
@@ -401,6 +413,8 @@ async function resetInvoice() {
   document.getElementById('customerSelect').value = '';
   document.getElementById('customerDetails').style.display = 'none';
   document.getElementById('paymentMode').value = 'cash';
+  document.getElementById('amountPaid').value = '';
+  toggleAmountPaid();
   await initInvoice();
   addItemRow();
 }
@@ -450,6 +464,7 @@ async function viewInvoice(id) {
           <p>Invoice #: <strong>${inv.invoice_no}</strong></p>
           <p>Date: <strong>${inv.invoice_date}</strong></p>
           <p>Payment: <strong>${inv.payment_mode === 'credit' ? '📝 Credit' : '💵 Cash'}</strong></p>
+          ${inv.amount_paid > 0 && inv.amount_paid < inv.grand_total ? `<p>Paid: <strong>₹${inv.amount_paid.toFixed(2)}</strong> | Due: <strong style="color:#e65100;">₹${(inv.grand_total - inv.amount_paid).toFixed(2)}</strong></p>` : ''}
         </div>
       </div>
       <div class="pi-customer">
@@ -1043,16 +1058,27 @@ async function viewCreditDetails(customerId, name) {
   document.getElementById('creditDetailsTitle').textContent = 'Credit Details - ' + name;
   let total = 0;
   document.getElementById('creditDetailsList').innerHTML = invoices.map(inv => {
-    total += inv.grand_total;
-    return `<tr><td>${inv.invoice_no}</td><td>${inv.invoice_date}</td><td>₹${inv.grand_total.toFixed(2)}</td><td><span class="bill-badge-sm">${inv.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</span></td><td><button class="btn-sm btn-success" onclick="markAsPaid(${inv.id}, ${customerId}, '${name.replace(/'/g, "\\'")}')" style="font-size:.75em;">✅ Paid</button></td></tr>`;
+    total += inv.credit_remaining;
+    return `<tr><td>${inv.invoice_no}</td><td>${inv.invoice_date}</td><td>₹${inv.grand_total.toFixed(2)}</td><td>₹${inv.amount_paid.toFixed(2)}</td><td style="color:#e65100;font-weight:bold;">₹${inv.credit_remaining.toFixed(2)}</td><td><span class="bill-badge-sm">${inv.bill_type === 'non-gst' ? 'Non-GST' : 'GST'}</span></td><td><button class="btn-sm btn-success" onclick="markAsPaid(${inv.id}, ${customerId}, '${name.replace(/'/g, "\\'")}')">✅ Paid</button> <button class="btn-sm" onclick="partialPay(${inv.id}, ${inv.credit_remaining}, ${customerId}, '${name.replace(/'/g, "\\\'")}')" style="font-size:.75em;">💳 Partial</button></td></tr>`;
   }).join('');
   document.getElementById('creditDetailsTotal').textContent = 'Total Credit: ₹' + total.toFixed(2);
   document.getElementById('creditDetailsModal').style.display = 'flex';
 }
 
 async function markAsPaid(invoiceId, customerId, customerName) {
-  if (!confirm('Mark this invoice as paid?')) return;
-  await apiFetch('/api/invoices/' + invoiceId + '/mark-paid', { method: 'PUT' });
+  if (!confirm('Mark remaining balance as fully paid?')) return;
+  await apiFetch('/api/invoices/' + invoiceId + '/mark-paid', { method: 'PUT', body: JSON.stringify({}) });
+  await viewCreditDetails(customerId, customerName);
+  await loadBalances();
+}
+
+async function partialPay(invoiceId, remaining, customerId, customerName) {
+  const amount = prompt('Remaining: ₹' + remaining.toFixed(2) + '\nEnter amount to pay:');
+  if (!amount) return;
+  const num = parseFloat(amount);
+  if (isNaN(num) || num <= 0) return alert('Enter a valid amount');
+  if (num > remaining) return alert('Amount cannot exceed remaining balance of ₹' + remaining.toFixed(2));
+  await apiFetch('/api/invoices/' + invoiceId + '/mark-paid', { method: 'PUT', body: JSON.stringify({ amount: num }) });
   await viewCreditDetails(customerId, customerName);
   await loadBalances();
 }
