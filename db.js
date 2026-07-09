@@ -154,6 +154,19 @@ async function initDB() {
     )
   `);
 
+  // Payment log table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payment_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      payment_date TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id)
+    )
+  `);
+
   saveDB();
   return db;
 }

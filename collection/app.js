@@ -222,6 +222,7 @@ function openPaymentModal(invoiceId, invoiceNo, grandTotal, amountPaid, remainin
   `;
   $('partialAmount').value = '';
   $('partialAmount').max = remaining;
+  $('paymentDate').value = new Date().toISOString().slice(0, 10);
   $('paymentModal').classList.remove('hidden');
 }
 
@@ -248,9 +249,10 @@ async function markFullPaid(invoiceId, remaining) {
 
 async function recordPayment(invoiceId, amount) {
   try {
+    const payment_date = $('paymentDate')?.value || new Date().toISOString().slice(0, 10);
     await api(`/api/invoices/${invoiceId}/mark-paid`, {
       method: 'PUT',
-      body: JSON.stringify({ amount })
+      body: JSON.stringify({ amount, payment_date })
     });
     showToast('Payment recorded ✓');
     openCustomerDetail(currentCustomerId);
@@ -262,8 +264,22 @@ async function recordPayment(invoiceId, amount) {
 // ── View Invoice ──
 async function viewInvoice(invoiceId) {
   try {
-    const inv = await api(`/api/invoices/${invoiceId}`);
+    const [inv, payments] = await Promise.all([
+      api(`/api/invoices/${invoiceId}`),
+      api(`/api/invoices/${invoiceId}/payments`)
+    ]);
     const pending = inv.grand_total - inv.amount_paid;
+    const paymentHistoryHtml = payments.length ? `
+      <div class="inv-detail-section">
+        <h4>Payment History</h4>
+        ${payments.map(p => `
+          <div class="inv-detail-row">
+            <span>${formatDate(p.payment_date)}</span>
+            <span style="color:var(--success);font-weight:600">${formatCurrency(p.amount)}</span>
+          </div>
+        `).join('')}
+      </div>
+    ` : '';
     $('invoiceDetail').innerHTML = `
       <div class="inv-detail-section">
         <div class="inv-detail-row"><span>Invoice #</span><span>${inv.invoice_no}</span></div>
@@ -288,6 +304,7 @@ async function viewInvoice(invoiceId) {
         <div class="inv-detail-row"><span>Paid</span><span style="color:var(--success)">${formatCurrency(inv.amount_paid)}</span></div>
         <div class="inv-detail-row"><span>Pending</span><span style="color:var(--danger);font-weight:700">${formatCurrency(pending)}</span></div>
       </div>
+      ${paymentHistoryHtml}
     `;
     $('invoiceModal').classList.remove('hidden');
   } catch (err) {

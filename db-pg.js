@@ -71,6 +71,16 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS payment_log (
+        id SERIAL PRIMARY KEY,
+        invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+        amount REAL NOT NULL,
+        payment_date TEXT NOT NULL,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
 
     // Seed products
     const { rows: [{ count: pCount }] } = await client.query('SELECT COUNT(*)::int as count FROM products');

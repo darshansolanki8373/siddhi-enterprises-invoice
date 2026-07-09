@@ -219,14 +219,20 @@ app.get('/api/customer-balances/:id', async (req, res) => {
 });
 
 app.put('/api/invoices/:id/mark-paid', async (req, res) => {
-  const { amount } = req.body || {};
+  const { amount, payment_date, notes } = req.body || {};
   const invoice = await queryOne('SELECT * FROM invoices WHERE id = $1', [Number(req.params.id)]);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   const payAmount = amount != null ? Number(amount) : (invoice.grand_total - invoice.amount_paid);
   const newAmountPaid = invoice.amount_paid + payAmount;
   const newMode = newAmountPaid >= invoice.grand_total ? 'cash' : invoice.payment_mode;
   await runSql('UPDATE invoices SET amount_paid = $1, payment_mode = $2 WHERE id = $3', [newAmountPaid, newMode, Number(req.params.id)]);
+  await runSql('INSERT INTO payment_log (invoice_id, amount, payment_date, notes) VALUES ($1, $2, $3, $4)',
+    [Number(req.params.id), payAmount, payment_date || new Date().toISOString().slice(0, 10), notes || '']);
   res.json({ success: true });
+});
+
+app.get('/api/invoices/:id/payments', async (req, res) => {
+  res.json(await queryAll('SELECT * FROM payment_log WHERE invoice_id = $1 ORDER BY payment_date DESC, created_at DESC', [Number(req.params.id)]));
 });
 
 // ── Reports API ──
