@@ -3,6 +3,7 @@ let TOKEN = localStorage.getItem('col_token') || '';
 let customers = [];
 let balances = [];
 let currentCustomerId = null;
+let currentBrand = 'pushp';
 
 // ── Helpers ──
 function headers() { return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN }; }
@@ -58,6 +59,16 @@ function logout() {
 }
 $('btnLogout').addEventListener('click', logout);
 
+// ── Brand Tabs ──
+document.querySelectorAll('.brand-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentBrand = tab.dataset.brand;
+    loadBalances();
+  });
+});
+
 // ── Data Loading ──
 async function loadData() {
   try {
@@ -83,7 +94,7 @@ async function loadBalances() {
   const toDate = $('filterTo').value;
 
   // Get all customer balances
-  let allBalances = await api('/api/customer-balances');
+  let allBalances = await api('/api/customer-balances?brand=' + currentBrand);
 
   // Apply filters
   if (custId) {
@@ -95,6 +106,7 @@ async function loadBalances() {
     let params = new URLSearchParams();
     if (fromDate) params.set('from_date', fromDate);
     if (toDate) params.set('to_date', toDate);
+    params.set('brand', currentBrand);
 
     // Get all invoices within the date range
     const invoices = await api('/api/invoices?' + params.toString());
@@ -159,7 +171,7 @@ function renderBalances() {
 async function openCustomerDetail(custId) {
   currentCustomerId = custId;
   const cust = customers.find(c => c.id === custId);
-  const pendingInvoices = await api(`/api/customer-balances/${custId}`);
+  const pendingInvoices = await api(`/api/customer-balances/${custId}?brand=${currentBrand}`);
 
   $('customerList').classList.add('hidden');
   $('filterCustomer').closest('.filters-bar').classList.add('hidden');

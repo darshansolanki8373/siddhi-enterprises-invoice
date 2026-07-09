@@ -136,6 +136,30 @@ body {
 }
 .topbar h2 { font-size: 18px; font-weight: 700; }
 
+/* Brand Tabs */
+.brand-tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.brand-tab {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-light);
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+.brand-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
 /* Filters */
 .filters-bar {
   display: grid;
