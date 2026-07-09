@@ -412,7 +412,7 @@ async function resetInvoice() {
   document.getElementById('itemsBody').innerHTML = '';
   document.getElementById('customerSelect').value = '';
   document.getElementById('customerDetails').style.display = 'none';
-  document.getElementById('paymentMode').value = 'cash';
+  document.getElementById('paymentMode').value = 'credit';
   document.getElementById('amountPaid').value = '';
   toggleAmountPaid();
   await initInvoice();
