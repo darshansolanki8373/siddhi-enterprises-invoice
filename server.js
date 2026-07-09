@@ -16,6 +16,7 @@ const USERS = [
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/collection', express.static(path.join(__dirname, 'collection')));
 
 // ── Auth ──
 app.post('/api/login', (req, res) => {
