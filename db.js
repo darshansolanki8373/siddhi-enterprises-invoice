@@ -42,7 +42,7 @@ async function initDB() {
   db.run(`
     CREATE TABLE IF NOT EXISTS invoices (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_no INTEGER NOT NULL UNIQUE,
+      invoice_no INTEGER NOT NULL,
       invoice_date TEXT NOT NULL,
       customer_id INTEGER NOT NULL,
       bill_type TEXT NOT NULL DEFAULT 'gst',

@@ -33,7 +33,7 @@ async function initDB() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS invoices (
         id SERIAL PRIMARY KEY,
-        invoice_no INTEGER NOT NULL UNIQUE,
+        invoice_no INTEGER NOT NULL,
         invoice_date TEXT NOT NULL,
         customer_id INTEGER NOT NULL REFERENCES customers(id),
         bill_type TEXT NOT NULL DEFAULT 'gst',
@@ -48,7 +48,8 @@ async function initDB() {
         payment_mode TEXT NOT NULL DEFAULT 'cash',
         amount_paid REAL NOT NULL DEFAULT 0,
         brand TEXT NOT NULL DEFAULT 'pushp',
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(invoice_no, brand)
       )
     `);
     await client.query(`
@@ -81,6 +82,12 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // Migration: change invoice_no unique constraint to (invoice_no, brand)
+    try {
+      await client.query('ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_invoice_no_key');
+      await client.query('CREATE UNIQUE INDEX IF NOT EXISTS invoices_no_brand_uniq ON invoices(invoice_no, brand)');
+    } catch(e) { /* already migrated */ }
 
     // Seed products
     const { rows: [{ count: pCount }] } = await client.query('SELECT COUNT(*)::int as count FROM products');
