@@ -2,16 +2,18 @@
   "name": "siddhi-enterprises-invoice",
   "version": "1.0.0",
   "description": "Invoice Management App for Siddhi Enterprises",
-  "main": "server.js",
+  "main": "server-pg.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server-pg.js",
+    "start:local": "node server.js",
+    "dev": "node server-pg.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.3",
+    "pg": "^8.22.0",
     "sql.js": "^1.10.2"
   }
 }
