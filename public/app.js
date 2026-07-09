@@ -361,14 +361,13 @@ function getInvoiceData() {
   const sgst = taxableAmount * (sgstRate / 100);
   const grandTotal = billType === 'gst' ? taxableAmount + cgst + sgst : subtotal;
   const paymentMode = document.getElementById('paymentMode').value;
-  const actualPaymentMode = paymentMode === 'partial' ? 'credit' : paymentMode;
-  const amountPaid = paymentMode === 'cash' ? grandTotal : (paymentMode === 'partial' ? (parseFloat(document.getElementById('amountPaid').value) || 0) : 0);
+  const amountPaid = paymentMode === 'cash' ? grandTotal : 0;
   return {
     invoice_no: parseInt(document.getElementById('invoiceNo').value),
     invoice_date: document.getElementById('invoiceDate').value,
     customer_id: parseInt(document.getElementById('customerSelect').value),
     bill_type: billType,
-    payment_mode: actualPaymentMode,
+    payment_mode: paymentMode,
     amount_paid: amountPaid,
     brand: currentBrand,
     items, subtotal, cgst_rate: cgstRate, sgst_rate: sgstRate, cgst_total: cgst, sgst_total: sgst,
@@ -380,7 +379,6 @@ async function saveInvoice() {
   const data = getInvoiceData();
   if (!data.customer_id) return alert('Select a customer');
   if (!data.items.length) return alert('Add at least one item');
-  if (data.payment_mode === 'credit' && data.amount_paid > 0 && data.amount_paid >= data.grand_total) return alert('Partial amount must be less than grand total. Use Cash payment instead.');
   if (data.bill_type === 'gst') {
     const cust = customers.find(c => c.id === data.customer_id);
     if (!cust || !cust.gst_no || !cust.gst_no.trim()) return alert('GST Bill requires customer GST number. Please update the customer details.');
