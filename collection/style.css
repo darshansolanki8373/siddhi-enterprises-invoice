@@ -290,3 +290,16 @@ body {
 }
 .empty-state i { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
 .empty-state p { font-size: 15px; }
+
+/* Invoice Modal */
+.modal-full { max-height: 90vh; overflow-y: auto; }
+.inv-detail-section { margin-bottom: 16px; }
+.inv-detail-section h4 { font-size: 13px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.inv-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--border); }
+.inv-detail-row:last-child { border-bottom: none; }
+.inv-detail-row.total { font-weight: 700; font-size: 16px; border-top: 2px solid var(--text); border-bottom: none; padding-top: 10px; margin-top: 4px; }
+.inv-items-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+.inv-items-table th { text-align: left; padding: 8px 4px; border-bottom: 2px solid var(--border); color: var(--text-light); font-size: 11px; text-transform: uppercase; }
+.inv-items-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); }
+.inv-items-table td:last-child, .inv-items-table th:last-child { text-align: right; }
+.btn-view { background: var(--bg); color: var(--text); border: 1px solid var(--border) !important; }

@@ -189,8 +189,9 @@ async function openCustomerDetail(custId) {
         <div class="pending"><div class="label">Pending</div><div class="value">${formatCurrency(inv.credit_remaining)}</div></div>
       </div>
       <div class="inv-actions">
-        <button class="btn-pay-partial" onclick="openPaymentModal(${inv.id}, ${inv.invoice_no}, ${inv.grand_total}, ${inv.amount_paid}, ${inv.credit_remaining})">Partial Pay</button>
-        <button class="btn-pay-full" onclick="markFullPaid(${inv.id}, ${inv.credit_remaining})">Mark Paid</button>
+        <button class="btn-view" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i> View</button>
+        <button class="btn-pay-partial" onclick="openPaymentModal(${inv.id}, ${inv.invoice_no}, ${inv.grand_total}, ${inv.amount_paid}, ${inv.credit_remaining})">Partial</button>
+        <button class="btn-pay-full" onclick="markFullPaid(${inv.id}, ${inv.credit_remaining})">Paid</button>
       </div>
     </div>
   `).join('');
@@ -257,6 +258,44 @@ async function recordPayment(invoiceId, amount) {
     showToast('Error: ' + err.message);
   }
 }
+
+// ── View Invoice ──
+async function viewInvoice(invoiceId) {
+  try {
+    const inv = await api(`/api/invoices/${invoiceId}`);
+    const pending = inv.grand_total - inv.amount_paid;
+    $('invoiceDetail').innerHTML = `
+      <div class="inv-detail-section">
+        <div class="inv-detail-row"><span>Invoice #</span><span>${inv.invoice_no}</span></div>
+        <div class="inv-detail-row"><span>Date</span><span>${formatDate(inv.invoice_date)}</span></div>
+        <div class="inv-detail-row"><span>Customer</span><span>${inv.customer_name}</span></div>
+        <div class="inv-detail-row"><span>Type</span><span>${inv.bill_type?.toUpperCase()}</span></div>
+        <div class="inv-detail-row"><span>Payment</span><span>${inv.payment_mode}</span></div>
+      </div>
+      <div class="inv-detail-section">
+        <h4>Items</h4>
+        <table class="inv-items-table">
+          <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead>
+          <tbody>${inv.items.map(it => `<tr><td>${it.product_name} (${it.packaging})</td><td>${it.quantity}</td><td>${formatCurrency(it.price)}</td><td>${formatCurrency(it.amount)}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="inv-detail-section">
+        <div class="inv-detail-row"><span>Subtotal</span><span>${formatCurrency(inv.subtotal)}</span></div>
+        ${inv.cgst_total ? `<div class="inv-detail-row"><span>CGST (${inv.cgst_rate}%)</span><span>${formatCurrency(inv.cgst_total)}</span></div>` : ''}
+        ${inv.sgst_total ? `<div class="inv-detail-row"><span>SGST (${inv.sgst_rate}%)</span><span>${formatCurrency(inv.sgst_total)}</span></div>` : ''}
+        ${inv.discount_total ? `<div class="inv-detail-row"><span>Discount (${inv.discount_rate}%)</span><span>-${formatCurrency(inv.discount_total)}</span></div>` : ''}
+        <div class="inv-detail-row total"><span>Grand Total</span><span>${formatCurrency(inv.grand_total)}</span></div>
+        <div class="inv-detail-row"><span>Paid</span><span style="color:var(--success)">${formatCurrency(inv.amount_paid)}</span></div>
+        <div class="inv-detail-row"><span>Pending</span><span style="color:var(--danger);font-weight:700">${formatCurrency(pending)}</span></div>
+      </div>
+    `;
+    $('invoiceModal').classList.remove('hidden');
+  } catch (err) {
+    showToast('Error loading invoice');
+  }
+}
+$('btnCloseInvoice').addEventListener('click', () => $('invoiceModal').classList.add('hidden'));
+$('invoiceModal').addEventListener('click', (e) => { if (e.target === $('invoiceModal')) $('invoiceModal').classList.add('hidden'); });
 
 // ── Filter ──
 $('btnApplyFilter').addEventListener('click', loadBalances);
