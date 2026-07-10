@@ -515,77 +515,248 @@ async function loadInvoices() {
   `).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;">No invoices found</td></tr>';
 }
 
+}
+
+function buildInvoiceHTML(inv) {
+  const taxable = (inv.subtotal - (inv.discount_total || 0));
+  const taxTotal = (inv.cgst_total || 0) + (inv.sgst_total || 0);
+  const isGst = inv.bill_type !== 'non-gst';
+  const hsnCodes = [...new Set(inv.items.map(i => i.hsn_code).filter(Boolean))].join(', ');
+  const brandName = inv.brand === 'sapat' ? 'Sapat Chai' : 'Pushp Masala';
+  return `
+  <div class="print-invoice">
+    <div class="pi-outer">
+
+      <!-- TOP: Company + Title + Invoice Meta -->
+      <div class="pi-top">
+        <div class="pi-company">
+          <div class="pi-company-name">Siddhi Enterprises</div>
+          <div class="pi-company-brand">${brandName}</div>
+          <div>Juna Mondha, Beed - 431122</div>
+          <div>State: Maharashtra &nbsp;|&nbsp; Code: 27</div>
+          <div>GSTIN/UIN: 27CKWPS3584D1ZF</div>
+          <div>FSSAI No: 11515047000269</div>
+          <div>Mob: 8275223287 / 9422911445</div>
+        </div>
+        <div class="pi-title-block">
+          <div class="pi-title">${isGst ? 'TAX INVOICE' : 'INVOICE'}</div>
+        </div>
+        <div class="pi-meta-block">
+          <table class="pi-meta-table">
+            <tr><td>Invoice No.</td><td><strong>${inv.invoice_no}</strong></td></tr>
+            <tr><td>Date</td><td><strong>${inv.invoice_date}</strong></td></tr>
+            <tr><td>Payment</td><td>${inv.payment_mode === 'credit' ? 'Credit' : 'Cash'}</td></tr>
+            ${inv.amount_paid > 0 && inv.amount_paid < inv.grand_total
+              ? `<tr><td>Paid</td><td>₹${inv.amount_paid.toFixed(2)}</td></tr>
+                 <tr><td>Balance Due</td><td style="color:#c00"><strong>₹${(inv.grand_total - inv.amount_paid).toFixed(2)}</strong></td></tr>`
+              : ''}
+          </table>
+        </div>
+      </div>
+
+      <!-- PARTY -->
+      <div class="pi-party">
+        <span class="pi-party-label">Consignee / Buyer:</span>
+        <strong>${esc(inv.customer_name)}</strong>
+        ${inv.customer_address ? `&nbsp;|&nbsp; ${esc(inv.customer_address)}` : ''}
+        ${inv.customer_mob ? `&nbsp;|&nbsp; Mob: ${esc(inv.customer_mob)}` : ''}
+        ${inv.customer_gst ? `&nbsp;|&nbsp; GSTIN: ${esc(inv.customer_gst)}` : ''}
+      </div>
+
+      <!-- ITEMS TABLE -->
+      <table class="pi-items">
+        <colgroup>
+          <col style="width:4%"><col style="width:34%"><col style="width:9%"><col style="width:11%">
+          <col style="width:7%"><col style="width:11%"><col style="width:12%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Sr.</th><th>Description of Goods</th><th>HSN/SAC</th><th>Packaging</th>
+            <th>Qty</th><th>Rate (₹)</th><th>Amount (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${inv.items.map((it, i) => `
+            <tr>
+              <td class="tc">${i + 1}</td>
+              <td>${esc(it.product_name)}</td>
+              <td class="tc">${it.hsn_code || ''}</td>
+              <td class="tc">${it.packaging || ''}</td>
+              <td class="tc">${it.quantity}</td>
+              <td class="tr">₹${it.price.toFixed(2)}</td>
+              <td class="tr">₹${it.amount.toFixed(2)}</td>
+            </tr>
+          `).join('')}
+          <tr class="pi-items-spacer"><td colspan="7"></td></tr>
+        </tbody>
+        <tfoot>
+          <tr class="pi-items-total">
+            <td colspan="4" class="tc"><strong>Total</strong></td>
+            <td class="tc"><strong>${inv.items.reduce((s,i)=>s+i.quantity,0)}</strong></td>
+            <td></td>
+            <td class="tr"><strong>₹${inv.subtotal.toFixed(2)}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- BOTTOM SECTION -->
+      <div class="pi-bottom">
+
+        <!-- LEFT: Amount in words + bank -->
+        <div class="pi-bottom-left">
+          <div class="pi-words">
+            <strong>Amount in Words:</strong><br>
+            ${numberToWords(inv.grand_total)}
+          </div>
+          ${isGst ? `<div class="pi-tax-words">
+            <strong>Tax Amount in Words:</strong><br>
+            ${numberToWords(taxTotal)}
+          </div>` : ''}
+          <div class="pi-bank">
+            <strong>Bank Details:</strong><br>
+            Bank of Maharashtra, Beed<br>
+            A/c No: 60452321892<br>
+            IFSC: MAHB0001329
+          </div>
+        </div>
+
+        <!-- RIGHT: Totals -->
+        <div class="pi-totals">
+          ${isGst ? `
+          <div><span>Taxable Amount:</span><span>₹${taxable.toFixed(2)}</span></div>
+          ${(inv.discount_total || 0) > 0 ? `<div><span>Discount:</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
+          <div><span>CGST @ ${inv.cgst_rate || 2.5}%:</span><span>₹${(inv.cgst_total || 0).toFixed(2)}</span></div>
+          <div><span>SGST @ ${inv.sgst_rate || 2.5}%:</span><span>₹${(inv.sgst_total || 0).toFixed(2)}</span></div>
+          ` : `<div><span>Sub Total:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>`}
+          <div class="pi-grand"><span>Grand Total:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
+        </div>
+      </div>
+
+      <!-- GST SUMMARY TABLE -->
+      ${isGst ? `
+      <table class="pi-gst">
+        <thead>
+          <tr>
+            <th>HSN/SAC</th>
+            <th>Taxable Value (₹)</th>
+            <th>CGST Rate</th><th>CGST Amt (₹)</th>
+            <th>SGST Rate</th><th>SGST Amt (₹)</th>
+            <th>Total Tax (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tc">${hsnCodes}</td>
+            <td class="tr">${taxable.toFixed(2)}</td>
+            <td class="tc">${inv.cgst_rate || 2.5}%</td>
+            <td class="tr">${(inv.cgst_total || 0).toFixed(2)}</td>
+            <td class="tc">${inv.sgst_rate || 2.5}%</td>
+            <td class="tr">${(inv.sgst_total || 0).toFixed(2)}</td>
+            <td class="tr">${taxTotal.toFixed(2)}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td class="tr"><strong>${taxable.toFixed(2)}</strong></td>
+            <td></td>
+            <td class="tr"><strong>${(inv.cgst_total || 0).toFixed(2)}</strong></td>
+            <td></td>
+            <td class="tr"><strong>${(inv.sgst_total || 0).toFixed(2)}</strong></td>
+            <td class="tr"><strong>${taxTotal.toFixed(2)}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+      ` : ''}
+
+      <!-- FOOTER: Signature -->
+      <div class="pi-footer">
+        <div class="pi-footer-left">
+          <div class="pi-sig-line"></div>
+          <div>Receiver's Signature</div>
+        </div>
+        <div class="pi-footer-note">E. &amp; O.E. &nbsp;|&nbsp; This is a computer generated invoice.</div>
+        <div class="pi-footer-right">
+          <div><strong>for Siddhi Enterprises</strong></div>
+          <div class="pi-sig-line"></div>
+          <div>Authorised Signatory</div>
+        </div>
+      </div>
+
+    </div>
+  </div>`;
+}
+
 async function viewInvoice(id) {
   currentViewInvoiceId = id;
   const inv = await apiFetch('/api/invoices/' + id).then(r => r.json());
-  document.getElementById('invoicePrintArea').innerHTML = `
-    <div class="print-invoice">
-      <div class="pi-header">
-        <div>
-          <h2>Siddhi Enterprises</h2>
-          <p style="font-size:.85em;color:#555;">Juna Mondha, Beed - 431122</p>
-          <p style="font-size:.8em;color:#666;">GSTIN: 27CKWPS3584D1ZF | FSSAI: 11515047000269</p>
-          <p style="font-size:.8em;color:#666;">Mob: 8275223287 / 9422911445</p>
-        </div>
-        <div style="text-align:right;">
-          <h3 style="color:#1a237e;">TAX INVOICE</h3>
-          <p>Invoice #: <strong>${inv.invoice_no}</strong></p>
-          <p>Date: <strong>${inv.invoice_date}</strong></p>
-          <p>Payment: <strong>${inv.payment_mode === 'credit' ? '📝 Credit' : '💵 Cash'}</strong></p>
-          ${inv.amount_paid > 0 && inv.amount_paid < inv.grand_total ? `<p>Paid: <strong>₹${inv.amount_paid.toFixed(2)}</strong> | Due: <strong style="color:#e65100;">₹${(inv.grand_total - inv.amount_paid).toFixed(2)}</strong></p>` : ''}
-        </div>
-      </div>
-      <div class="pi-customer">
-        <strong>Bill To:</strong> ${esc(inv.customer_name)}<br>
-        ${inv.customer_address ? 'Address: ' + esc(inv.customer_address) + '<br>' : ''}
-        ${inv.customer_mob ? 'Mobile: ' + esc(inv.customer_mob) + '<br>' : ''}
-        ${inv.customer_gst ? 'GSTIN: ' + esc(inv.customer_gst) : ''}
-      </div>
-      <table>
-        <colgroup><col style="width:5%"><col style="width:30%"><col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:17%"><col style="width:20%"></colgroup>
-        <thead><tr><th>#</th><th>Product</th><th>HSN</th><th>Pkg</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
-        <tbody>
-          ${inv.items.map((it, i) => `
-            <tr><td>${i + 1}</td><td>${esc(it.product_name)}</td><td>${it.hsn_code}</td><td>${it.packaging}</td>
-            <td>${it.quantity}</td><td>₹${it.price.toFixed(2)}</td><td>₹${it.amount.toFixed(2)}</td></tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <div class="pi-totals">
-        <div><span>Original Amount:</span><span>₹${inv.subtotal.toFixed(2)}</span></div>
-        ${inv.bill_type !== 'non-gst' ? `
-        ${(inv.discount_total || 0) > 0 ? `<div><span>Special Discount:</span><span>-₹${inv.discount_total.toFixed(2)}</span></div>` : ''}
-        <div><span>Taxable Amount:</span><span>₹${(inv.subtotal - (inv.discount_total || 0)).toFixed(2)}</span></div>
-        <div><span>CGST (${(inv.cgst_rate || 2.5)}%):</span><span>₹${inv.cgst_total.toFixed(2)}</span></div>
-        <div><span>SGST (${(inv.sgst_rate || 2.5)}%):</span><span>₹${inv.sgst_total.toFixed(2)}</span></div>
-        ` : ''}
-        <div class="pi-grand"><span>Final Payable:</span><span>₹${inv.grand_total.toFixed(2)}</span></div>
-      </div>
-      <div style="clear:both;width:100%;font-size:.85em;font-style:italic;margin-top:8px;text-align:left;"><strong>In Words:</strong> ${numberToWords(inv.grand_total)}</div>
-    </div>
-  `;
+  document.getElementById('invoicePrintArea').innerHTML = buildInvoiceHTML(inv);
   document.getElementById('viewInvoiceModal').style.display = 'flex';
 }
+
+const BILL_CSS = `
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 10px; background: #fff; color: #000; }
+  .print-invoice { padding: 8px; }
+  .pi-outer { border: 1.5px solid #000; }
+
+  /* Top header */
+  .pi-top { display: flex; border-bottom: 1px solid #000; }
+  .pi-company { flex: 1; padding: 6px 8px; border-right: 1px solid #000; line-height: 1.5; }
+  .pi-company-name { font-size: 15px; font-weight: bold; }
+  .pi-company-brand { font-size: 11px; color: #444; margin-bottom: 2px; }
+  .pi-title-block { width: 120px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; }
+  .pi-title { font-size: 13px; font-weight: bold; letter-spacing: 1px; writing-mode: horizontal-tb; text-align: center; }
+  .pi-meta-block { width: 200px; padding: 6px 8px; }
+  .pi-meta-table { width: 100%; border-collapse: collapse; }
+  .pi-meta-table td { padding: 2px 4px; font-size: 10px; line-height: 1.4; }
+  .pi-meta-table td:first-child { color: #555; white-space: nowrap; }
+
+  /* Party */
+  .pi-party { padding: 5px 8px; border-bottom: 1px solid #000; font-size: 10px; line-height: 1.5; }
+  .pi-party-label { font-weight: bold; margin-right: 4px; }
+
+  /* Items table */
+  .pi-items { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
+  .pi-items th { background: #000; color: #fff; padding: 3px 5px; font-size: 9px; text-align: left; border-right: 1px solid #555; }
+  .pi-items th:last-child { border-right: none; }
+  .pi-items td { padding: 3px 5px; border-bottom: 1px solid #ddd; border-right: 1px solid #eee; font-size: 9.5px; line-height: 1.3; }
+  .pi-items td:last-child { border-right: none; }
+  .pi-items tfoot td { border-top: 1.5px solid #000; border-bottom: none; background: #f5f5f5; }
+  .pi-items-spacer td { height: 10px; border: none !important; }
+  .tc { text-align: center; }
+  .tr { text-align: right; }
+
+  /* Bottom */
+  .pi-bottom { display: flex; border-bottom: 1px solid #000; }
+  .pi-bottom-left { flex: 1; padding: 6px 8px; border-right: 1px solid #000; line-height: 1.6; }
+  .pi-words { margin-bottom: 5px; font-style: italic; }
+  .pi-tax-words { margin-bottom: 5px; font-style: italic; }
+  .pi-bank { font-size: 9px; color: #333; }
+  .pi-totals { width: 230px; padding: 6px 8px; }
+  .pi-totals div { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dotted #ddd; font-size: 10px; }
+  .pi-totals div span:last-child { text-align: right; min-width: 80px; }
+  .pi-grand { font-weight: bold; font-size: 11px !important; border-top: 2px solid #000 !important; border-bottom: none !important; padding-top: 4px !important; }
+
+  /* GST summary */
+  .pi-gst { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
+  .pi-gst th { background: #eee; color: #000; padding: 3px 5px; font-size: 9px; border: 1px solid #aaa; text-align: center; }
+  .pi-gst td { padding: 3px 5px; font-size: 9.5px; border: 1px solid #ccc; }
+  .pi-gst tfoot td { background: #f5f5f5; font-weight: bold; }
+
+  /* Footer */
+  .pi-footer { display: flex; justify-content: space-between; align-items: flex-end; padding: 8px 10px 6px; }
+  .pi-footer-note { font-size: 8px; color: #666; text-align: center; align-self: flex-end; }
+  .pi-sig-line { width: 120px; border-bottom: 1px solid #000; height: 24px; margin: 2px 0; }
+  .pi-footer-left, .pi-footer-right { font-size: 9.5px; text-align: center; }
+
+  @media print { body { margin: 0; } }
+`;
 
 function downloadCurrentInvoice() {
   const printArea = document.getElementById('invoicePrintArea');
   const win = window.open('', '_blank');
-  win.document.write(`
-    <html><head><title>Invoice</title>
-    <style>
-      body { font-family: 'Segoe UI', sans-serif; padding: 20px; }
-      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 3px solid #1a237e; padding-bottom: 10px; margin-bottom: 15px; }
-      .print-invoice .pi-header h2 { color: #1a237e; }
-      .print-invoice .pi-customer { background: #f5f5f5; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: .9em; }
-      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-      .print-invoice th { background: #1a237e; color: #fff; padding: 6px 8px; font-size: .8em; text-align: left; }
-      .print-invoice td { padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: .85em; }
-      .print-invoice .pi-totals { margin-left: auto; width: 250px; }
-      .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 3px 0; }
-      .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 6px; }
-      @media print { body { margin: 0; } }
-    </style></head><body>${printArea.innerHTML}</body></html>
-  `);
+  win.document.write(`<html><head><title>Invoice</title><style>${BILL_CSS}</style></head><body>${printArea.innerHTML}</body></html>`);
   win.document.close();
   setTimeout(() => { win.print(); }, 300);
 }
@@ -597,60 +768,21 @@ function printInvoice(includeSeller) {
     <div class="copy-section">
       <div class="copy-label">${label}</div>
       ${invoiceHTML}
-      <div class="invoice-footer">
-        <div class="thank-you">Thank you for your business!</div>
-        <div class="signature-block">
-          <div class="signature-line"></div>
-          <div>Authorized Signature</div>
-        </div>
-      </div>
-    </div>
-  `;
+    </div>`;
   const bodyContent = includeSeller
-    ? `${copyHTML('Customer Copy')}<div class="cut-line-label">✂</div><div class="cut-line"></div>${copyHTML('Seller Copy')}`
+    ? `${copyHTML('Customer Copy')}<div class="cut-divider">✂</div>${copyHTML('Seller Copy')}`
     : copyHTML('Customer Copy');
-  const bodyStyle = includeSeller
-    ? 'display: flex; gap: 0; height: 100vh;'
-    : 'display: flex; height: 100vh;';
-  const sectionStyle = includeSeller
-    ? ''
-    : '.copy-section { max-width: 50%; }';
   const win = window.open('', '_blank');
   win.document.write(`
     <html><head><title>Print Invoice</title>
     <style>
-      @page { size: A4 landscape; margin: 2mm 4mm; }
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Segoe UI', sans-serif; ${bodyStyle} }
-      .copy-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 4px 10px 6px 10px; border: 1.5px solid #000; min-width: 0; }
-      ${sectionStyle}
-      .copy-label { text-align: right; font-size: 9px; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 1px; }
-      .cut-line { border: none; border-left: 2px dashed #888; width: 0; align-self: stretch; }
-      .cut-line-label { writing-mode: vertical-rl; font-size: 8px; color: #999; display: flex; align-items: center; padding: 0 1px; }
-      .print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 5px; }
-      .print-invoice .pi-header h2 { color: #000; font-size: 13px; font-weight: bold; }
-      .print-invoice .pi-header h3 { font-size: 10px; color: #000; }
-      .print-invoice .pi-header p { font-size: 8px; color: #333; margin: 0; line-height: 1.3; }
-      .print-invoice .pi-customer { padding: 3px 6px; border-radius: 3px; margin-bottom: 4px; font-size: 8.5px; line-height: 1.3; }
-      .print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 4px; table-layout: fixed; }
-      .print-invoice th { background: #000; color: #fff; padding: 2px 3px; font-size: 8px; text-align: left; overflow: hidden; }
-      .print-invoice th:last-child { text-align: right; }
-      .print-invoice td { padding: 1.5px 3px; border-bottom: 1px solid #ccc; font-size: 8.5px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .print-invoice td:last-child { text-align: right; }
-      .print-invoice .pi-totals { margin-left: auto; width: 190px; }
-      .print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 1px 0; font-size: 9px; line-height: 1.3; }
-      .print-invoice .pi-totals div span:last-child { text-align: right; min-width: 70px; }
-      .print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #000; padding-top: 2px; }
-      .print-invoice { flex: 1; }
-      .invoice-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding: 0 8px; }
-      .signature-block { text-align: center; font-size: 9px; }
-      .signature-line { width: 120px; border-bottom: 1px solid #000; margin-bottom: 2px; height: 18px; }
-      .thank-you { font-size: 9px; color: #333; font-style: italic; }
-      @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-    </style></head><body>
-      ${bodyContent}
-    </body></html>
-  `);
+      ${BILL_CSS}
+      @page { size: A4 ${includeSeller ? 'landscape' : 'portrait'}; margin: 4mm; }
+      body { display: flex; gap: 0; }
+      .copy-section { flex: 1; padding: 2px; }
+      .copy-label { text-align: right; font-size: 8px; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 2px; }
+      .cut-divider { display: flex; align-items: center; padding: 0 4px; font-size: 12px; color: #aaa; }
+    </style></head><body>${bodyContent}</body></html>`);
   win.document.close();
   setTimeout(() => { win.print(); }, 300);
 }

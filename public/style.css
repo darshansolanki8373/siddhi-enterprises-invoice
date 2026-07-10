@@ -93,17 +93,45 @@ body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: 
 .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
 .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
 
-/* Print invoice in modal */
-.print-invoice { padding: 20px; }
-.print-invoice .pi-header { display: flex; justify-content: space-between; border-bottom: 3px solid #1a237e; padding-bottom: 10px; margin-bottom: 15px; }
-.print-invoice .pi-header h2 { color: #1a237e; }
-.print-invoice .pi-customer { background: #f5f5f5; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: .9em; }
-.print-invoice table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-.print-invoice th { background: #1a237e; color: #fff; padding: 6px 8px; font-size: .8em; text-align: left; }
-.print-invoice td { padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: .85em; }
-.print-invoice .pi-totals { margin-left: auto; width: 250px; }
-.print-invoice .pi-totals div { display: flex; justify-content: space-between; padding: 3px 0; }
-.print-invoice .pi-totals .pi-grand { font-weight: bold; border-top: 2px solid #1a237e; padding-top: 6px; }
+/* Print invoice in modal - Kothari style */
+.print-invoice { font-family: Arial, sans-serif; font-size: 10px; color: #000; }
+.pi-outer { border: 1.5px solid #000; }
+.pi-top { display: flex; border-bottom: 1px solid #000; }
+.pi-company { flex: 1; padding: 6px 8px; border-right: 1px solid #000; line-height: 1.5; }
+.pi-company-name { font-size: 16px; font-weight: bold; }
+.pi-company-brand { font-size: 11px; color: #444; margin-bottom: 2px; }
+.pi-title-block { width: 120px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; }
+.pi-title { font-size: 13px; font-weight: bold; letter-spacing: 1px; text-align: center; }
+.pi-meta-block { width: 200px; padding: 6px 8px; }
+.pi-meta-table { width: 100%; border-collapse: collapse; }
+.pi-meta-table td { padding: 2px 4px; font-size: 10px; line-height: 1.5; }
+.pi-meta-table td:first-child { color: #555; white-space: nowrap; }
+.pi-party { padding: 5px 8px; border-bottom: 1px solid #000; font-size: 10px; line-height: 1.5; }
+.pi-party-label { font-weight: bold; margin-right: 4px; }
+.pi-items { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
+.pi-items th { background: #000; color: #fff; padding: 4px 5px; font-size: 9px; text-align: left; border-right: 1px solid #555; }
+.pi-items th:last-child { border-right: none; }
+.pi-items td { padding: 4px 5px; border-bottom: 1px solid #eee; border-right: 1px solid #eee; font-size: 9.5px; }
+.pi-items td:last-child { border-right: none; }
+.pi-items tfoot td { border-top: 1.5px solid #000; background: #f5f5f5; }
+.pi-items-spacer td { height: 10px; border: none !important; }
+.tc { text-align: center; } .tr { text-align: right; }
+.pi-bottom { display: flex; border-bottom: 1px solid #000; }
+.pi-bottom-left { flex: 1; padding: 6px 8px; border-right: 1px solid #000; line-height: 1.6; font-size: 10px; }
+.pi-words, .pi-tax-words { margin-bottom: 5px; font-style: italic; }
+.pi-bank { font-size: 9px; color: #444; margin-top: 4px; }
+.pi-totals { width: 240px; padding: 6px 8px; }
+.pi-totals div { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dotted #ddd; font-size: 10px; }
+.pi-totals div span:last-child { text-align: right; min-width: 80px; }
+.pi-grand { font-weight: bold !important; font-size: 11px !important; border-top: 2px solid #000 !important; border-bottom: none !important; padding-top: 4px !important; }
+.pi-gst { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; font-size: 9.5px; }
+.pi-gst th { background: #eee; color: #000; padding: 3px 5px; font-size: 9px; border: 1px solid #aaa; text-align: center; }
+.pi-gst td { padding: 3px 5px; border: 1px solid #ccc; }
+.pi-gst tfoot td { background: #f5f5f5; font-weight: bold; }
+.pi-footer { display: flex; justify-content: space-between; align-items: flex-end; padding: 8px 10px 6px; font-size: 9.5px; }
+.pi-footer-note { font-size: 8px; color: #666; text-align: center; align-self: flex-end; }
+.pi-sig-line { width: 120px; border-bottom: 1px solid #000; height: 24px; margin: 2px 0; }
+.pi-footer-left, .pi-footer-right { text-align: center; }
 
 /* Stat Cards */
 .stat-card { flex: 1; min-width: 150px; background: #e8eaf6; border-radius: 8px; padding: 16px; text-align: center; }
