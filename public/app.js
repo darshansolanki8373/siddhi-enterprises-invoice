@@ -524,11 +524,12 @@ function buildInvoiceHTML(inv) {
   return `
   <div class="print-invoice">
     <div class="pi-outer">
+      <div class="pi-jurisdiction">SUBJECT TO BEED JURISDICTION</div>
 
       <!-- TOP: Company + Title + Invoice Meta -->
       <div class="pi-top">
         <div class="pi-company">
-          <div class="pi-company-name">Siddhi Enterprises</div>
+          <div class="pi-company-name">SIDDHI ENTERPRISES</div>
           <div class="pi-company-brand">${brandName}</div>
           <div>Juna Mondha, Beed - 431122</div>
           <div>State: Maharashtra &nbsp;|&nbsp; Code: 27</div>
@@ -606,10 +607,7 @@ function buildInvoiceHTML(inv) {
             <strong>Amount in Words:</strong><br>
             ${numberToWords(inv.grand_total)}
           </div>
-          ${isGst ? `<div class="pi-tax-words">
-            <strong>Tax Amount in Words:</strong><br>
-            ${numberToWords(taxTotal)}
-          </div>` : ''}
+
           <div class="pi-bank">
             <strong>Bank Details:</strong><br>
             Bank of Maharashtra, Beed<br>
@@ -630,42 +628,7 @@ function buildInvoiceHTML(inv) {
         </div>
       </div>
 
-      <!-- GST SUMMARY TABLE -->
-      ${isGst ? `
-      <table class="pi-gst">
-        <thead>
-          <tr>
-            <th>HSN/SAC</th>
-            <th>Taxable Value (₹)</th>
-            <th>CGST Rate</th><th>CGST Amt (₹)</th>
-            <th>SGST Rate</th><th>SGST Amt (₹)</th>
-            <th>Total Tax (₹)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="tc">${hsnCodes}</td>
-            <td class="tr">${taxable.toFixed(2)}</td>
-            <td class="tc">${inv.cgst_rate || 2.5}%</td>
-            <td class="tr">${(inv.cgst_total || 0).toFixed(2)}</td>
-            <td class="tc">${inv.sgst_rate || 2.5}%</td>
-            <td class="tr">${(inv.sgst_total || 0).toFixed(2)}</td>
-            <td class="tr">${taxTotal.toFixed(2)}</td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <td><strong>Total</strong></td>
-            <td class="tr"><strong>${taxable.toFixed(2)}</strong></td>
-            <td></td>
-            <td class="tr"><strong>${(inv.cgst_total || 0).toFixed(2)}</strong></td>
-            <td></td>
-            <td class="tr"><strong>${(inv.sgst_total || 0).toFixed(2)}</strong></td>
-            <td class="tr"><strong>${taxTotal.toFixed(2)}</strong></td>
-          </tr>
-        </tfoot>
-      </table>
-      ` : ''}
+
 
       <!-- FOOTER: Signature -->
       <div class="pi-footer">
@@ -673,9 +636,9 @@ function buildInvoiceHTML(inv) {
           <div class="pi-sig-line"></div>
           <div>Receiver's Signature</div>
         </div>
-        <div class="pi-footer-note">E. &amp; O.E. &nbsp;|&nbsp; This is a computer generated invoice.</div>
+        <div class="pi-footer-note">This is a computer generated invoice.</div>
         <div class="pi-footer-right">
-          <div><strong>for Siddhi Enterprises</strong></div>
+          <div><strong>for SIDDHI ENTERPRISES</strong></div>
           <div class="pi-sig-line"></div>
           <div>Authorised Signatory</div>
         </div>
@@ -697,6 +660,7 @@ const BILL_CSS = `
   body { font-family: Arial, sans-serif; font-size: 10px; background: #fff; color: #000; }
   .print-invoice { padding: 8px; }
   .pi-outer { border: 1.5px solid #000; }
+  .pi-jurisdiction { text-align: center; font-size: 9px; font-weight: bold; letter-spacing: 1px; padding: 3px; border-bottom: 1px solid #000; background: #f5f5f5; }
 
   /* Top header */
   .pi-top { display: flex; border-bottom: 1px solid #000; }
