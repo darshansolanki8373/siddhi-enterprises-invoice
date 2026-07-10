@@ -2,7 +2,7 @@ const API = '';
 let products = [];
 let customers = [];
 let currentViewInvoiceId = null;
-let billType = 'gst';
+let billType = 'non-gst';
 
 // ── Auth ──
 function getToken() { return sessionStorage.getItem('token'); }
@@ -53,7 +53,7 @@ async function initApp() {
   document.getElementById('itemsBody').innerHTML = '';
   addItemRow();
   // Apply initial bill type visibility
-  document.querySelectorAll('.gst-only').forEach(el => { el.style.display = 'flex'; });
+  document.querySelectorAll('.gst-only').forEach(el => { el.style.display = 'none'; });
 }
 
 // ── Init ──
