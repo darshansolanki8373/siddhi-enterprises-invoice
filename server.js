@@ -10,7 +10,7 @@ const app = express();
 const JWT_SECRET = crypto.randomBytes(32).toString('hex');
 
 const USERS = [
-  { id: 1, username: 'admin', passwordHash: '$2b$10$BkI6/6cRqFQP92NQzbhjH.yP76ugXPHGMZKzAf1U7LJtfMWE1aorO' }
+  { id: 1, username: 'admin', passwordHash: '$2b$10$wlnJ6VfzrJsWcco/Rl92Oedg4z7I4o56X0fqeYbt8wAyZAI4UHLbO' }
 ];
 
 app.use(cors());
