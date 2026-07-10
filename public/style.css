@@ -43,6 +43,17 @@ body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: 
 .product-search-input { padding: 4px 6px; border: 1px solid #1a237e; border-radius: 3px; font-size: .85em; width: 100%; box-sizing: border-box; }
 .product-select { width: 100%; box-sizing: border-box; }
 
+/* Custom searchable dropdown */
+.custom-select-wrap { position: relative; display: inline-block; width: 100%; }
+.custom-select-trigger { padding: 5px 28px 5px 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E") no-repeat right 8px center; cursor: pointer; font-size: .85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; min-width: 160px; }
+.custom-select-trigger:hover { border-color: #1a237e; }
+.custom-select-panel { position: absolute; top: 100%; left: 0; z-index: 9999; background: #fff; border: 1px solid #1a237e; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.15); min-width: 220px; width: max-content; max-width: 320px; }
+.custom-select-search { display: block; width: 100%; padding: 7px 8px; border: none; border-bottom: 1px solid #eee; font-size: .85em; outline: none; box-sizing: border-box; }
+.custom-select-list { max-height: 200px; overflow-y: auto; }
+.custom-select-item { padding: 7px 10px; font-size: .85em; cursor: pointer; white-space: nowrap; }
+.custom-select-item:hover { background: #e8eaf6; color: #1a237e; }
+.pkg-tag { color: #888; font-size: .8em; margin-left: 4px; }
+
 /* Totals */
 .totals-section { margin-left: auto; width: 300px; margin-bottom: 20px; }
 .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: .95em; }

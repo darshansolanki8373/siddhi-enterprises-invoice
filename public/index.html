@@ -100,9 +100,15 @@
       <div class="customer-section">
         <div class="form-row">
           <label>Customer:</label>
-          <select id="customerSelect" onchange="onCustomerChange()">
-            <option value="">-- Select Customer --</option>
-          </select>
+          <div class="custom-select-wrap" style="flex:1">
+            <div class="custom-select-trigger" onclick="openCustomSelect(this)">-- Select Customer --</div>
+            <input type="hidden" id="customerSelectHidden">
+            <select id="customerSelect" onchange="onCustomerChange()" style="display:none"></select>
+            <div class="custom-select-panel" style="display:none">
+              <input type="text" class="custom-select-search" placeholder="🔍 Search customer..." autocomplete="off" oninput="filterCustomSelect(this)">
+              <div class="custom-select-list" id="customerItemsList"></div>
+            </div>
+          </div>
           <button class="btn btn-sm" onclick="showAddCustomerModal()">+ New</button>
         </div>
         <div id="customerDetails" class="customer-details" style="display:none">

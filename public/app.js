@@ -189,8 +189,27 @@ async function loadCustomers() {
 
 function populateCustomerSelect() {
   const sel = document.getElementById('customerSelect');
-  sel.innerHTML = '<option value="">-- Select Customer --</option>' +
-    customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if (sel) {
+    sel.innerHTML = '<option value="">-- Select Customer --</option>' +
+      customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  }
+  // Custom searchable customer dropdown
+  const custList = document.getElementById('customerItemsList');
+  if (custList) {
+    custList.innerHTML = customers.map(c =>
+      `<div class="custom-select-item" data-id="${c.id}" data-label="${esc(c.name)}" onclick="pickCustomerItem(this)">${esc(c.name)}</div>`
+    ).join('');
+  }
+}
+
+function pickCustomerItem(item) {
+  const wrap = item.closest('.custom-select-wrap');
+  wrap.querySelector('.custom-select-trigger').textContent = item.dataset.label;
+  wrap.querySelector('#customerSelectHidden').value = item.dataset.id;
+  wrap.querySelector('.custom-select-panel').style.display = 'none';
+  // Sync native select for compatibility
+  const nativeSel = document.getElementById('customerSelect');
+  if (nativeSel) { nativeSel.value = item.dataset.id; onCustomerChange(); }
 }
 
 function populateFilterCustomer() {
@@ -284,13 +303,15 @@ function addItemRow() {
   tr.innerHTML = `
     <td>${idx}</td>
     <td class="product-cell">
-      <div class="product-search-wrap">
-        <input type="text" class="product-search-input" placeholder="🔍 Search item..." autocomplete="off"
-          oninput="filterProductSelect(this)">
-        <select class="product-select" onchange="onProductSelect(this)">
-          <option value="">-- Select --</option>
-          ${products.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('')}
-        </select>
+      <div class="custom-select-wrap" data-type="product">
+        <div class="custom-select-trigger" onclick="openCustomSelect(this)">-- Select --</div>
+        <input type="hidden" class="product-id-hidden">
+        <div class="custom-select-panel" style="display:none">
+          <input type="text" class="custom-select-search" placeholder="🔍 Search item..." autocomplete="off" oninput="filterCustomSelect(this)">
+          <div class="custom-select-list">
+            ${products.map(p => `<div class="custom-select-item" data-id="${p.id}" data-label="${esc(p.name)} (${esc(p.packaging)})" onclick="pickProductItem(this)">${esc(p.name)} <span class="pkg-tag">${esc(p.packaging)}</span></div>`).join('')}
+          </div>
+        </div>
       </div>
     </td>
     <td class="hsn"></td>
@@ -303,20 +324,44 @@ function addItemRow() {
   tbody.appendChild(tr);
 }
 
-function filterProductSelect(input) {
-  const wrap = input.closest('.product-search-wrap');
-  const select = wrap.querySelector('.product-select');
-  const query = input.value.trim().toLowerCase();
-  const filtered = query
-    ? products.filter(p => p.name.toLowerCase().includes(query) || (p.packaging && p.packaging.toLowerCase().includes(query)))
-    : products;
-  select.innerHTML = '<option value="">-- Select --</option>' +
-    filtered.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('');
+function openCustomSelect(trigger) {
+  // Close any other open panels first
+  document.querySelectorAll('.custom-select-panel').forEach(p => {
+    if (p !== trigger.nextElementSibling.nextElementSibling && p !== trigger.nextElementSibling) p.style.display = 'none';
+  });
+  const wrap = trigger.closest('.custom-select-wrap');
+  const panel = wrap.querySelector('.custom-select-panel');
+  const isOpen = panel.style.display !== 'none';
+  // Close all panels
+  document.querySelectorAll('.custom-select-panel').forEach(p => p.style.display = 'none');
+  if (!isOpen) {
+    panel.style.display = 'block';
+    const searchInput = panel.querySelector('.custom-select-search');
+    searchInput.value = '';
+    filterCustomSelect(searchInput);
+    searchInput.focus();
+  }
 }
 
-function onProductSelect(sel) {
-  const tr = sel.closest('tr');
-  const p = products.find(x => x.id === parseInt(sel.value));
+function filterCustomSelect(searchInput) {
+  const panel = searchInput.closest('.custom-select-panel');
+  const list = panel.querySelector('.custom-select-list');
+  const query = searchInput.value.trim().toLowerCase();
+  Array.from(list.children).forEach(item => {
+    const label = item.dataset.label ? item.dataset.label.toLowerCase() : item.textContent.toLowerCase();
+    item.style.display = query === '' || label.includes(query) ? '' : 'none';
+  });
+}
+
+function pickProductItem(item) {
+  const wrap = item.closest('.custom-select-wrap');
+  const label = item.dataset.label;
+  const productId = parseInt(item.dataset.id);
+  wrap.querySelector('.custom-select-trigger').textContent = label;
+  wrap.querySelector('.product-id-hidden').value = productId;
+  wrap.querySelector('.custom-select-panel').style.display = 'none';
+  const tr = wrap.closest('tr');
+  const p = products.find(x => x.id === productId);
   if (p) {
     tr.querySelector('.hsn').textContent = p.hsn_code;
     tr.querySelector('.pkg').textContent = p.packaging;
@@ -324,6 +369,13 @@ function onProductSelect(sel) {
     calcRow(tr.querySelector('.rate'));
   }
 }
+
+// Close custom selects when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.custom-select-wrap')) {
+    document.querySelectorAll('.custom-select-panel').forEach(p => p.style.display = 'none');
+  }
+});
 
 function calcRow(el) {
   const tr = el.closest('tr');
@@ -360,7 +412,7 @@ function recalcAll() {
 function getInvoiceData() {
   const items = [];
   document.querySelectorAll('#itemsBody tr').forEach(tr => {
-    const productId = parseInt(tr.querySelector('.product-select').value);
+    const productId = parseInt(tr.querySelector('.product-id-hidden').value);
     if (!productId) return;
     const qty = parseInt(tr.querySelector('input[type="number"]').value) || 0;
     const rate = parseFloat(tr.querySelector('.rate').value) || 0;
@@ -380,7 +432,7 @@ function getInvoiceData() {
   return {
     invoice_no: parseInt(document.getElementById('invoiceNo').value),
     invoice_date: document.getElementById('invoiceDate').value,
-    customer_id: parseInt(document.getElementById('customerSelect').value),
+    customer_id: parseInt(document.getElementById('customerSelectHidden').value || document.getElementById('customerSelect').value),
     bill_type: billType,
     payment_mode: paymentMode,
     amount_paid: amountPaid,
@@ -424,6 +476,9 @@ async function saveAndDownload() {
 async function resetInvoice() {
   document.getElementById('itemsBody').innerHTML = '';
   document.getElementById('customerSelect').value = '';
+  document.getElementById('customerSelectHidden').value = '';
+  const custTrigger = document.querySelector('.customer-section .custom-select-trigger');
+  if (custTrigger) custTrigger.textContent = '-- Select Customer --';
   document.getElementById('customerDetails').style.display = 'none';
   document.getElementById('paymentMode').value = 'credit';
   document.getElementById('amountPaid').value = '';
