@@ -287,7 +287,7 @@ function addItemRow() {
       <div class="product-search-wrap">
         <input type="text" class="product-search-input" placeholder="🔍 Search item..." autocomplete="off"
           oninput="filterProductSelect(this)">
-        <select class="product-select" onchange="onProductSelect(this)" size="4">
+        <select class="product-select" onchange="onProductSelect(this)">
           <option value="">-- Select --</option>
           ${products.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('')}
         </select>
