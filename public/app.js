@@ -283,11 +283,15 @@ function addItemRow() {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td>${idx}</td>
-    <td>
-      <select onchange="onProductSelect(this)">
-        <option value="">-- Select --</option>
-        ${products.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('')}
-      </select>
+    <td class="product-cell">
+      <div class="product-search-wrap">
+        <input type="text" class="product-search-input" placeholder="🔍 Search item..." autocomplete="off"
+          oninput="filterProductSelect(this)">
+        <select class="product-select" onchange="onProductSelect(this)" size="4">
+          <option value="">-- Select --</option>
+          ${products.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('')}
+        </select>
+      </div>
     </td>
     <td class="hsn"></td>
     <td class="pkg"></td>
@@ -297,6 +301,17 @@ function addItemRow() {
     <td><button class="btn-remove" onclick="this.closest('tr').remove(); recalcAll();">✕</button></td>
   `;
   tbody.appendChild(tr);
+}
+
+function filterProductSelect(input) {
+  const wrap = input.closest('.product-search-wrap');
+  const select = wrap.querySelector('.product-select');
+  const query = input.value.trim().toLowerCase();
+  const filtered = query
+    ? products.filter(p => p.name.toLowerCase().includes(query) || (p.packaging && p.packaging.toLowerCase().includes(query)))
+    : products;
+  select.innerHTML = '<option value="">-- Select --</option>' +
+    filtered.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.packaging)})</option>`).join('');
 }
 
 function onProductSelect(sel) {
@@ -345,7 +360,7 @@ function recalcAll() {
 function getInvoiceData() {
   const items = [];
   document.querySelectorAll('#itemsBody tr').forEach(tr => {
-    const productId = parseInt(tr.querySelector('select').value);
+    const productId = parseInt(tr.querySelector('.product-select').value);
     if (!productId) return;
     const qty = parseInt(tr.querySelector('input[type="number"]').value) || 0;
     const rate = parseFloat(tr.querySelector('.rate').value) || 0;
