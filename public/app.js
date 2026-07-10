@@ -515,8 +515,6 @@ async function loadInvoices() {
   `).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;">No invoices found</td></tr>';
 }
 
-}
-
 function buildInvoiceHTML(inv) {
   const taxable = (inv.subtotal - (inv.discount_total || 0));
   const taxTotal = (inv.cgst_total || 0) + (inv.sgst_total || 0);
