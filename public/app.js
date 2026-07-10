@@ -725,18 +725,54 @@ function printInvoice(includeSeller) {
       ${invoiceHTML}
     </div>`;
   const bodyContent = includeSeller
-    ? `${copyHTML('Customer Copy')}<div class="cut-divider">✂</div>${copyHTML('Seller Copy')}`
+    ? `${copyHTML('Customer Copy')}<div class="cut-divider"><span>✂ &nbsp; Cut Here &nbsp; ✂</span></div>${copyHTML('Seller Copy')}`
     : copyHTML('Customer Copy');
   const win = window.open('', '_blank');
   win.document.write(`
     <html><head><title>Print Invoice</title>
     <style>
-      ${BILL_CSS}
-      @page { size: A4 ${includeSeller ? 'landscape' : 'portrait'}; margin: 4mm; }
-      body { display: flex; gap: 0; }
-      .copy-section { flex: 1; padding: 2px; }
-      .copy-label { text-align: right; font-size: 8px; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 2px; }
-      .cut-divider { display: flex; align-items: center; padding: 0 4px; font-size: 12px; color: #aaa; }
+      @page { size: A4 portrait; margin: 5mm 6mm; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; font-size: 7.5pt; background: #fff; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .copy-section { width: 100%; }
+      .copy-label { text-align: right; font-size: 7pt; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 1mm; letter-spacing: 0.5pt; }
+      .cut-divider { text-align: center; padding: 1.5mm 0; font-size: 8pt; color: #aaa; border-top: 1pt dashed #aaa; border-bottom: 1pt dashed #aaa; margin: 1.5mm 0; }
+      .pi-outer { border: 0.75pt solid #000; }
+      .pi-jurisdiction { text-align: center; font-size: 6.5pt; font-weight: bold; padding: 1mm 2mm; border-bottom: 0.5pt solid #000; background: #f5f5f5; letter-spacing: 0.5pt; }
+      .pi-top { display: flex; border-bottom: 0.5pt solid #000; }
+      .pi-company { flex: 1; padding: 2mm 2.5mm; border-right: 0.5pt solid #000; line-height: 1.4; }
+      .pi-company-name { font-size: 11pt; font-weight: bold; }
+      .pi-company-brand { font-size: 8pt; color: #444; margin-bottom: 0.5mm; }
+      .pi-title-block { width: 22mm; display: flex; align-items: center; justify-content: center; border-right: 0.5pt solid #000; }
+      .pi-title { font-size: 9pt; font-weight: bold; letter-spacing: 0.5pt; text-align: center; }
+      .pi-meta-block { width: 46mm; padding: 2mm 2.5mm; }
+      .pi-meta-table { width: 100%; border-collapse: collapse; }
+      .pi-meta-table td { padding: 0.5mm 1mm; font-size: 7.5pt; line-height: 1.35; }
+      .pi-meta-table td:first-child { color: #555; white-space: nowrap; }
+      .pi-party { padding: 1.5mm 2.5mm; border-bottom: 0.5pt solid #000; font-size: 7.5pt; line-height: 1.4; }
+      .pi-party-label { font-weight: bold; margin-right: 1.5mm; }
+      .pi-items { width: 100%; border-collapse: collapse; border-bottom: 0.5pt solid #000; }
+      .pi-items th { background: #000; color: #fff; padding: 1mm 1.5mm; font-size: 6.5pt; text-align: left; border: 0.5pt solid #555; }
+      .pi-items td { padding: 0.8mm 1.5mm; border: 0.5pt solid #ccc; font-size: 7pt; line-height: 1.25; }
+      .pi-items tfoot td { border-top: 0.75pt solid #000; background: #f5f5f5; font-weight: bold; }
+      .pi-items-spacer td { height: 1.5mm; border: none !important; }
+      .tc { text-align: center; } .tr { text-align: right; }
+      .pi-bottom { display: flex; border-bottom: 0.5pt solid #000; }
+      .pi-bottom-left { flex: 1; padding: 1.5mm 2.5mm; border-right: 0.5pt solid #000; line-height: 1.4; font-size: 7pt; }
+      .pi-words { margin-bottom: 1mm; font-style: italic; font-size: 7pt; }
+      .pi-bank { font-size: 6.5pt; color: #333; margin-top: 1mm; }
+      .pi-totals { width: 48mm; padding: 1.5mm 2mm; }
+      .pi-totals div { display: flex; justify-content: space-between; padding: 0.5mm 0; border-bottom: 0.5pt dotted #ddd; font-size: 7.5pt; }
+      .pi-totals div span:last-child { text-align: right; min-width: 15mm; }
+      .pi-grand { font-weight: bold; font-size: 8.5pt !important; border-top: 0.75pt solid #000 !important; border-bottom: none !important; padding-top: 1mm !important; }
+      .pi-gst { width: 100%; border-collapse: collapse; border-bottom: 0.5pt solid #000; }
+      .pi-gst th { background: #eee; padding: 1mm 1.5mm; font-size: 6.5pt; border: 0.5pt solid #aaa; text-align: center; }
+      .pi-gst td { padding: 1mm 1.5mm; font-size: 7pt; border: 0.5pt solid #ccc; }
+      .pi-gst tfoot td { background: #f5f5f5; font-weight: bold; }
+      .pi-footer { display: flex; justify-content: space-between; align-items: flex-end; padding: 2mm 3mm 1.5mm; }
+      .pi-footer-note { font-size: 6pt; color: #666; text-align: center; }
+      .pi-sig-line { width: 25mm; border-bottom: 0.5pt solid #000; height: 5mm; margin: 1mm 0; }
+      .pi-footer-left, .pi-footer-right { font-size: 7pt; text-align: center; }
     </style></head><body>${bodyContent}</body></html>`);
   win.document.close();
   setTimeout(() => { win.print(); }, 300);
