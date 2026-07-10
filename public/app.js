@@ -343,6 +343,17 @@ function pickProductItem(item) {
   const wrap = item.closest('.custom-select-wrap');
   const label = item.dataset.label;
   const productId = parseInt(item.dataset.id);
+
+  // Check if this product is already added in another row
+  const alreadyUsed = Array.from(document.querySelectorAll('#itemsBody .product-id-hidden'))
+    .filter(input => input.closest('tr') !== wrap.closest('tr'))
+    .some(input => parseInt(input.value) === productId);
+  if (alreadyUsed) {
+    alert('This product is already added. Increase the quantity instead.');
+    wrap.querySelector('.custom-select-panel').style.display = 'none';
+    return;
+  }
+
   wrap.querySelector('.custom-select-trigger').textContent = label;
   wrap.querySelector('.product-id-hidden').value = productId;
   wrap.querySelector('.custom-select-panel').style.display = 'none';
