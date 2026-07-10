@@ -1,4 +1,4 @@
-const CACHE_NAME = 'siddhi-v1';
+const CACHE_NAME = 'siddhi-v10';
 const STATIC_ASSETS = ['/', '/style.css', '/app.js', '/manifest.json'];
 
 self.addEventListener('install', e => {
@@ -8,6 +8,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))));
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
