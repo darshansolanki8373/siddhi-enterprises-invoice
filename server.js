@@ -67,8 +67,8 @@ app.post('/api/products', (req, res) => {
 });
 
 app.put('/api/products/:id', (req, res) => {
-  const { name, hsn_code, packaging, price } = req.body;
-  runSql('UPDATE products SET name=?, hsn_code=?, packaging=?, price=? WHERE id=?', [name, hsn_code, packaging, price, Number(req.params.id)]);
+  const { name, hsn_code, packaging, price, brand } = req.body;
+  runSql('UPDATE products SET name=?, hsn_code=?, packaging=?, price=?, brand=? WHERE id=?', [name, hsn_code, packaging, price, brand || 'pushp', Number(req.params.id)]);
   saveDB();
   res.json({ success: true });
 });

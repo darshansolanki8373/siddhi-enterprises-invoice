@@ -65,8 +65,8 @@ app.post('/api/products', async (req, res) => {
 });
 
 app.put('/api/products/:id', async (req, res) => {
-  const { name, hsn_code, packaging, price } = req.body;
-  await runSql('UPDATE products SET name=$1, hsn_code=$2, packaging=$3, price=$4 WHERE id=$5', [name, hsn_code, packaging, price, Number(req.params.id)]);
+  const { name, hsn_code, packaging, price, brand } = req.body;
+  await runSql('UPDATE products SET name=$1, hsn_code=$2, packaging=$3, price=$4, brand=$5 WHERE id=$6', [name, hsn_code, packaging, price, brand || 'pushp', Number(req.params.id)]);
   res.json({ success: true });
 });
 

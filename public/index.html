@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="/icon-192.svg">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
   <!-- Login Screen -->
@@ -28,33 +29,13 @@
   <!-- Main App (hidden until login) -->
   <div id="mainApp" style="display:none">
 
-  <!-- Brand Selection -->
-  <div id="brandScreen" class="login-screen" style="display:none">
-    <div class="login-box">
-      <h1>🏪 Siddhi Enterprises</h1>
-      <p class="login-subtitle">Select Brand</p>
-      <button class="btn btn-primary btn-block" onclick="selectBrand('pushp')" style="margin-bottom:10px;background:#e65100;">🌶️ Pushp Masala</button>
-      <button class="btn btn-success btn-block" onclick="selectBrand('sapat')" style="background:#2e7d32;">☕ Sapat Chai</button>
-      <button class="btn btn-secondary btn-block" onclick="doLogout()" style="margin-top:15px">🚪 Logout</button>
-    </div>
-  </div>
 
-  <!-- Bill Type Selection -->
-  <div id="billTypeScreen" class="login-screen" style="display:none">
-    <div class="login-box">
-      <h1>🏪 Siddhi Enterprises</h1>
-      <p class="login-subtitle">Select Bill Type</p>
-      <button class="btn btn-primary btn-block" onclick="selectBillType('gst')" style="margin-bottom:10px">📋 GST Bill</button>
-      <button class="btn btn-success btn-block" onclick="selectBillType('non-gst')">📄 Non-GST Bill</button>
-      <button class="btn btn-secondary btn-block" onclick="doLogout()" style="margin-top:15px">🚪 Logout</button>
-    </div>
-  </div>
 
   <!-- App Content -->
   <div id="appContent" style="display:none">
   <!-- Navigation -->
   <nav class="navbar">
-    <div class="brand">🏪 Siddhi Enterprises <span id="brandBadge" class="bill-badge"></span> <span id="billTypeBadge" class="bill-badge"></span></div>
+    <div class="brand">🏪 Siddhi Enterprises</div>
     <div class="nav-links">
       <a href="#" onclick="showSection('invoice')" class="nav-link active" id="nav-invoice">New Invoice</a>
       <a href="#" onclick="showSection('history')" class="nav-link" id="nav-history">Invoice History</a>
@@ -65,8 +46,6 @@
       <a href="#" onclick="showSection('unpaid')" class="nav-link" id="nav-unpaid">📋 Unpaid</a>
       <a href="#" onclick="showSection('reports')" class="nav-link" id="nav-reports">📊 Reports</a>
       <a href="#" onclick="showSection('analytics')" class="nav-link" id="nav-analytics">📈 Analytics</a>
-      <a href="#" onclick="switchBrand()" class="nav-link">🏷️ Switch Brand</a>
-      <a href="#" onclick="switchBillType()" class="nav-link">🔄 Switch Bill</a>
       <a href="#" onclick="doLogout()" class="nav-link nav-logout">🚪 Logout</a>
     </div>
   </nav>
@@ -116,8 +95,15 @@
         </div>
       </div>
 
-      <!-- Payment Mode -->
+      <!-- Bill Type + Payment Mode -->
       <div class="customer-section">
+        <div class="form-row">
+          <label>Bill Type:</label>
+          <select id="billTypeSelect" onchange="onBillTypeChange()">
+            <option value="gst" selected>📋 GST Bill</option>
+            <option value="non-gst">📄 Non-GST Bill</option>
+          </select>
+        </div>
         <div class="form-row">
           <label>Payment Mode:</label>
           <select id="paymentMode">
@@ -200,7 +186,7 @@
     <div class="container">
       <h2>Products <button class="btn btn-sm" onclick="showAddProductModal()">+ Add Product</button></h2>
       <table class="data-table">
-        <thead><tr><th>Name</th><th>HSN</th><th>Packaging</th><th>Price (₹)</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Name</th><th>Brand</th><th>HSN</th><th>Packaging</th><th>Price (₹)</th><th>Actions</th></tr></thead>
         <tbody id="productsList"></tbody>
       </table>
     </div>
@@ -441,6 +427,7 @@
       <h3 id="productModalTitle">Add Product</h3>
       <input type="hidden" id="editProductId">
       <div class="form-group"><label>Name:</label><input type="text" id="prodName"></div>
+      <div class="form-group"><label>Brand:</label><select id="prodBrand"><option value="pushp">🌶️ Pushp Masala</option><option value="sapat">☕ Sapat Chai</option></select></div>
       <div class="form-group"><label>HSN Code:</label><input type="text" id="prodHsn"></div>
       <div class="form-group"><label>Packaging:</label><input type="text" id="prodPkg"></div>
       <div class="form-group"><label>Price (₹):</label><input type="number" id="prodPrice" step="0.01"></div>

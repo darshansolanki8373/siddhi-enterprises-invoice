@@ -3,7 +3,6 @@ let products = [];
 let customers = [];
 let currentViewInvoiceId = null;
 let billType = 'gst';
-let currentBrand = 'pushp';
 
 // ── Auth ──
 function getToken() { return sessionStorage.getItem('token'); }
@@ -25,52 +24,27 @@ async function doLogin() {
     sessionStorage.setItem('token', data.token);
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    document.getElementById('brandScreen').style.display = 'flex';
-    document.getElementById('billTypeScreen').style.display = 'none';
-    document.getElementById('appContent').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    initApp();
   } catch (e) {
     errEl.textContent = 'Connection error'; errEl.style.display = 'block';
   }
-}
-
-function selectBrand(brand) {
-  currentBrand = brand;
-  document.getElementById('brandScreen').style.display = 'none';
-  document.getElementById('billTypeScreen').style.display = 'flex';
-}
-
-function switchBrand() {
-  document.getElementById('appContent').style.display = 'none';
-  document.getElementById('billTypeScreen').style.display = 'none';
-  document.getElementById('brandScreen').style.display = 'flex';
 }
 
 function doLogout() {
   sessionStorage.removeItem('token');
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('appContent').style.display = 'none';
-  document.getElementById('billTypeScreen').style.display = 'none';
-  document.getElementById('brandScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginPass').value = '';
 }
 
-function selectBillType(type) {
-  billType = type;
-  document.getElementById('billTypeScreen').style.display = 'none';
-  document.getElementById('appContent').style.display = 'block';
-  document.getElementById('billTypeBadge').textContent = type === 'gst' ? 'GST' : 'Non-GST';
-  document.getElementById('brandBadge').textContent = currentBrand === 'pushp' ? '🌶️ Pushp' : '☕ Sapat';
-  // Show/hide GST fields
+function onBillTypeChange() {
+  billType = document.getElementById('billTypeSelect').value;
   document.querySelectorAll('.gst-only').forEach(el => {
-    el.style.display = type === 'gst' ? 'flex' : 'none';
+    el.style.display = billType === 'gst' ? 'flex' : 'none';
   });
-  initApp();
-}
-
-function switchBillType() {
-  document.getElementById('appContent').style.display = 'none';
-  document.getElementById('billTypeScreen').style.display = 'flex';
+  recalcAll();
 }
 
 async function initApp() {
@@ -78,6 +52,8 @@ async function initApp() {
   await initInvoice();
   document.getElementById('itemsBody').innerHTML = '';
   addItemRow();
+  // Apply initial bill type visibility
+  document.querySelectorAll('.gst-only').forEach(el => { el.style.display = 'flex'; });
 }
 
 // ── Init ──
@@ -88,9 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (getToken()) {
-    // Try to use existing token
     fetch(API + '/api/invoices/next-number', { headers: authHeaders() })
-      .then(r => { if (r.ok) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; document.getElementById('brandScreen').style.display = 'flex'; } else { doLogout(); } })
+      .then(r => {
+        if (r.ok) {
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('mainApp').style.display = 'block';
+          document.getElementById('appContent').style.display = 'block';
+          initApp();
+        } else { doLogout(); }
+      })
       .catch(() => doLogout());
   }
 });
@@ -120,15 +102,16 @@ function toggleAmountPaid() {
 
 // ── Products ──
 async function loadProducts() {
-  products = await apiFetch('/api/products?brand=' + currentBrand).then(r => r.json());
+  products = await apiFetch('/api/products').then(r => r.json());
 }
 
 function renderProductsList() {
   const tbody = document.getElementById('productsList');
   tbody.innerHTML = products.map(p => `
     <tr>
-      <td>${esc(p.name)}</td><td>${esc(p.hsn_code)}</td><td>${esc(p.packaging)}</td><td>${p.price.toFixed(2)}</td>
-
+      <td>${esc(p.name)}</td>
+      <td>${p.brand === 'sapat' ? '☕ Sapat' : '🌶️ Pushp'}</td>
+      <td>${esc(p.hsn_code)}</td><td>${esc(p.packaging)}</td><td>${p.price.toFixed(2)}</td>
       <td>
         <button class="btn-sm" onclick="editProduct(${p.id})">✏️</button>
         <button class="btn-remove" onclick="deleteProduct(${p.id})">🗑️</button>
@@ -141,6 +124,7 @@ function showAddProductModal() {
   document.getElementById('productModalTitle').textContent = 'Add Product';
   document.getElementById('editProductId').value = '';
   document.getElementById('prodName').value = '';
+  document.getElementById('prodBrand').value = 'pushp';
   document.getElementById('prodHsn').value = '';
   document.getElementById('prodPkg').value = '';
   document.getElementById('prodPrice').value = '';
@@ -152,6 +136,7 @@ function editProduct(id) {
   document.getElementById('productModalTitle').textContent = 'Edit Product';
   document.getElementById('editProductId').value = id;
   document.getElementById('prodName').value = p.name;
+  document.getElementById('prodBrand').value = p.brand || 'pushp';
   document.getElementById('prodHsn').value = p.hsn_code;
   document.getElementById('prodPkg').value = p.packaging;
   document.getElementById('prodPrice').value = p.price;
@@ -160,6 +145,7 @@ function editProduct(id) {
 
 async function saveProduct() {
   const id = document.getElementById('editProductId').value;
+  const brand = document.getElementById('prodBrand').value;
   const data = {
     name: document.getElementById('prodName').value.trim(),
     hsn_code: document.getElementById('prodHsn').value.trim(),
@@ -167,8 +153,8 @@ async function saveProduct() {
     price: parseFloat(document.getElementById('prodPrice').value)
   };
   if (!data.name || !data.hsn_code || !data.packaging || isNaN(data.price)) return alert('Fill all fields');
-  if (id) await apiFetch('/api/products/' + id, { method: 'PUT', body: JSON.stringify(data) });
-  else await apiFetch('/api/products', { method: 'POST', body: JSON.stringify({ ...data, brand: currentBrand }) });
+  if (id) await apiFetch('/api/products/' + id, { method: 'PUT', body: JSON.stringify({ ...data, brand }) });
+  else await apiFetch('/api/products', { method: 'POST', body: JSON.stringify({ ...data, brand }) });
   await loadProducts();
   renderProductsList();
   closeModal('productModal');
@@ -291,7 +277,7 @@ async function deleteCustomer(id) {
 
 // ── Invoice ──
 async function initInvoice() {
-  const { next_no } = await apiFetch('/api/invoices/next-number?brand=' + currentBrand).then(r => r.json());
+  const { next_no } = await apiFetch('/api/invoices/next-number').then(r => r.json());
   document.getElementById('invoiceNo').value = next_no;
   document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
 }
@@ -309,7 +295,7 @@ function addItemRow() {
         <div class="custom-select-panel" style="display:none">
           <input type="text" class="custom-select-search" placeholder="🔍 Search item..." autocomplete="off" oninput="filterCustomSelect(this)">
           <div class="custom-select-list">
-            ${products.map(p => `<div class="custom-select-item" data-id="${p.id}" data-label="${esc(p.name)} (${esc(p.packaging)})" onclick="pickProductItem(this)">${esc(p.name)} <span class="pkg-tag">${esc(p.packaging)}</span></div>`).join('')}
+            ${products.map(p => `<div class="custom-select-item" data-id="${p.id}" data-label="${esc(p.name)} (${esc(p.packaging)})" onclick="pickProductItem(this)">${esc(p.name)} <span class="pkg-tag">${esc(p.packaging)}</span> <span class="brand-tag" style="font-size:0.7em;color:#888;">${p.brand === 'sapat' ? '☕' : '🌶️'}</span></div>`).join('')}
           </div>
         </div>
       </div>
@@ -436,7 +422,6 @@ function getInvoiceData() {
     bill_type: billType,
     payment_mode: paymentMode,
     amount_paid: amountPaid,
-    brand: currentBrand,
     items, subtotal, cgst_rate: cgstRate, sgst_rate: sgstRate, cgst_total: cgst, sgst_total: sgst,
     discount_rate: totalGstRate, discount_total: discount, grand_total: grandTotal
   };
@@ -496,7 +481,6 @@ async function loadInvoices() {
   if (cid) params.append('customer_id', cid);
   if (from) params.append('from_date', from);
   if (to) params.append('to_date', to);
-  params.append('brand', currentBrand);
 
   const invoices = await apiFetch('/api/invoices?' + params).then(r => r.json());
   document.getElementById('invoicesList').innerHTML = invoices.map(inv => `
@@ -863,8 +847,8 @@ async function saveStockEntry() {
 
 async function loadStockLog() {
   const productId = document.getElementById('stockLogFilter').value;
-  let params = 'brand=' + currentBrand;
-  if (productId) params += '&product_id=' + productId;
+  let params = '';
+  if (productId) params += 'product_id=' + productId;
   const logs = await apiFetch('/api/stock-log?' + params).then(r => r.json());
   document.getElementById('stockLogList').innerHTML = logs.map(l => `
     <tr>
@@ -906,7 +890,7 @@ function initAnalytics() {
 async function loadAnalytics() {
   const year = document.getElementById('analyticsYear').value;
   const view = document.getElementById('analyticsView').value;
-  const data = await apiFetch(`/api/reports/product-sales?year=${year}&view=${view}&brand=${currentBrand}`).then(r => r.json());
+  const data = await apiFetch(`/api/reports/product-sales?year=${year}&view=${view}`).then(r => r.json());
 
   // Aggregate by product
   const prodMap = {};
@@ -964,7 +948,7 @@ async function loadProductTrend() {
 
   const year = document.getElementById('analyticsYear').value;
   const view = document.getElementById('analyticsView').value;
-  const data = await apiFetch(`/api/reports/product-sales?year=${year}&view=${view}&brand=${currentBrand}`).then(r => r.json());
+  const data = await apiFetch(`/api/reports/product-sales?year=${year}&view=${view}`).then(r => r.json());
   const filtered = data.filter(r => r.id === parseInt(productId));
 
   // Aggregate by period
@@ -1047,7 +1031,7 @@ async function loadReport() {
   const month = document.getElementById('reportMonth').value;
   const billType = document.getElementById('reportBillType').value;
   if (!month) return alert('Select a month');
-  const params = new URLSearchParams({ month, bill_type: billType, brand: currentBrand });
+  const params = new URLSearchParams({ month, bill_type: billType });
   const data = await apiFetch('/api/reports/monthly?' + params).then(r => r.json());
   lastReportData = data;
 
@@ -1127,7 +1111,7 @@ function downloadReportCSV() {
 async function downloadProductStockReport() {
   const month = document.getElementById('reportMonth').value;
   if (!month) return alert('Select a month');
-  const data = await apiFetch('/api/reports/product-stock-report?month=' + month + '&brand=' + currentBrand).then(r => r.json());
+  const data = await apiFetch('/api/reports/product-stock-report?month=' + month).then(r => r.json());
   if (!data.length) return alert('No products found');
   const headers = ['Product', 'HSN Code', 'Packaging', 'Qty Sold', 'Current Stock'];
   const rows = data.map(r => [
@@ -1154,8 +1138,8 @@ async function downloadProductStockReport() {
 async function loadUnpaidReport() {
   const from = document.getElementById('unpaidFromDate').value;
   const to = document.getElementById('unpaidToDate').value;
-  let url = '/api/reports/unpaid?brand=' + currentBrand;
-  if (from) url += '&from_date=' + from;
+  let url = '/api/reports/unpaid?';
+  if (from) url += 'from_date=' + from;
   if (to) url += '&to_date=' + to;
   const data = await apiFetch(url).then(r => r.json());
   const totalAmount = data.reduce((sum, r) => sum + r.grand_total, 0);
@@ -1201,7 +1185,7 @@ function downloadUnpaidPDF() {
 }
 
 async function loadBalances() {
-  const balances = await apiFetch('/api/customer-balances?brand=' + currentBrand).then(r => r.json());
+  const balances = await apiFetch('/api/customer-balances').then(r => r.json());
   document.getElementById('balancesList').innerHTML = balances.map(b => `
     <tr>
       <td>${esc(b.name)}</td>
@@ -1214,7 +1198,7 @@ async function loadBalances() {
 }
 
 async function viewCreditDetails(customerId, name) {
-  const invoices = await apiFetch('/api/customer-balances/' + customerId + '?brand=' + currentBrand).then(r => r.json());
+  const invoices = await apiFetch('/api/customer-balances/' + customerId).then(r => r.json());
   document.getElementById('creditDetailsTitle').textContent = 'Credit Details - ' + name;
   let total = 0;
   document.getElementById('creditDetailsList').innerHTML = invoices.map(inv => {
