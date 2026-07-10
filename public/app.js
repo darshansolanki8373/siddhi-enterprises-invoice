@@ -559,7 +559,7 @@ function buildInvoiceHTML(inv) {
         <strong>${esc(inv.customer_name)}</strong>
         ${inv.customer_address ? `&nbsp;|&nbsp; ${esc(inv.customer_address)}` : ''}
         ${inv.customer_mob ? `&nbsp;|&nbsp; Mob: ${esc(inv.customer_mob)}` : ''}
-        ${inv.customer_gst ? `&nbsp;|&nbsp; GSTIN: ${esc(inv.customer_gst)}` : ''}
+        ${inv.customer_gst ? `<br><span class="pi-party-label">GSTIN/UIN:</span> ${esc(inv.customer_gst)}` : ''}
       </div>
 
       <!-- ITEMS TABLE -->
