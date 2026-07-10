@@ -651,59 +651,59 @@ async function viewInvoice(id) {
 }
 
 const BILL_CSS = `
+  @page { size: A4 portrait; margin: 7mm 8mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; font-size: 10px; background: #fff; color: #000; }
-  .print-invoice { padding: 8px; }
-  .pi-outer { border: 1.5px solid #000; }
-  .pi-jurisdiction { text-align: center; font-size: 9px; font-weight: bold; letter-spacing: 1px; padding: 3px; border-bottom: 1px solid #000; background: #f5f5f5; }
+  body { font-family: Arial, sans-serif; font-size: 8.5pt; background: #fff; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-invoice { padding: 0; }
+  .pi-outer { border: 1pt solid #000; }
+  .pi-jurisdiction { text-align: center; font-size: 7.5pt; font-weight: bold; letter-spacing: 0.5pt; padding: 1.5mm 2mm; border-bottom: 0.5pt solid #000; background: #f5f5f5; }
 
   /* Top header */
-  .pi-top { display: flex; border-bottom: 1px solid #000; }
-  .pi-company { flex: 1; padding: 6px 8px; border-right: 1px solid #000; line-height: 1.5; }
-  .pi-company-name { font-size: 15px; font-weight: bold; }
-  .pi-company-brand { font-size: 11px; color: #444; margin-bottom: 2px; }
-  .pi-title-block { width: 120px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #000; }
-  .pi-title { font-size: 13px; font-weight: bold; letter-spacing: 1px; writing-mode: horizontal-tb; text-align: center; }
-  .pi-meta-block { width: 200px; padding: 6px 8px; }
+  .pi-top { display: flex; border-bottom: 0.5pt solid #000; }
+  .pi-company { flex: 1; padding: 3mm 3.5mm; border-right: 0.5pt solid #000; line-height: 1.45; }
+  .pi-company-name { font-size: 13pt; font-weight: bold; }
+  .pi-company-brand { font-size: 9pt; color: #444; margin-bottom: 1mm; }
+  .pi-title-block { width: 28mm; display: flex; align-items: center; justify-content: center; border-right: 0.5pt solid #000; }
+  .pi-title { font-size: 10.5pt; font-weight: bold; letter-spacing: 0.5pt; text-align: center; }
+  .pi-meta-block { width: 52mm; padding: 3mm 3.5mm; }
   .pi-meta-table { width: 100%; border-collapse: collapse; }
-  .pi-meta-table td { padding: 2px 4px; font-size: 10px; line-height: 1.4; }
+  .pi-meta-table td { padding: 0.8mm 1.5mm; font-size: 8.5pt; line-height: 1.4; }
   .pi-meta-table td:first-child { color: #555; white-space: nowrap; }
 
   /* Party */
-  .pi-party { padding: 5px 8px; border-bottom: 1px solid #000; font-size: 10px; line-height: 1.5; }
-  .pi-party-label { font-weight: bold; margin-right: 4px; }
+  .pi-party { padding: 2mm 3.5mm; border-bottom: 0.5pt solid #000; font-size: 8.5pt; line-height: 1.45; }
+  .pi-party-label { font-weight: bold; margin-right: 2mm; }
 
   /* Items table */
-  .pi-items { width: 100%; border-collapse: collapse; }
-  .pi-items th { background: #000; color: #fff; padding: 3px 5px; font-size: 9px; text-align: left; border: 1px solid #555; }
-  .pi-items td { padding: 3px 5px; border: 1px solid #aaa; font-size: 9.5px; line-height: 1.3; }
-  .pi-items tfoot td { border-top: 2px solid #000; background: #f5f5f5; }
-  .pi-items-spacer td { height: 10px; border: none !important; }
+  .pi-items { width: 100%; border-collapse: collapse; border-bottom: 0.5pt solid #000; }
+  .pi-items th { background: #000; color: #fff; padding: 1.5mm 2mm; font-size: 7.5pt; text-align: left; border: 0.5pt solid #555; }
+  .pi-items td { padding: 1.2mm 2mm; border: 0.5pt solid #bbb; font-size: 8pt; line-height: 1.3; }
+  .pi-items tfoot td { border-top: 1pt solid #000; background: #f5f5f5; font-weight: bold; }
+  .pi-items-spacer td { height: 3mm; border: none !important; }
   .tc { text-align: center; }
   .tr { text-align: right; }
 
   /* Bottom */
-  .pi-bottom { display: flex; border-bottom: 1px solid #000; }
-  .pi-bottom-left { flex: 1; padding: 6px 8px; border-right: 1px solid #000; line-height: 1.6; }
-  .pi-words { margin-bottom: 5px; font-style: italic; }
-  .pi-tax-words { margin-bottom: 5px; font-style: italic; }
-  .pi-bank { font-size: 9px; color: #333; }
-  .pi-totals { width: 230px; padding: 6px 8px; }
-  .pi-totals div { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dotted #ddd; font-size: 10px; }
-  .pi-totals div span:last-child { text-align: right; min-width: 80px; }
-  .pi-grand { font-weight: bold; font-size: 11px !important; border-top: 2px solid #000 !important; border-bottom: none !important; padding-top: 4px !important; }
+  .pi-bottom { display: flex; border-bottom: 0.5pt solid #000; }
+  .pi-bottom-left { flex: 1; padding: 2.5mm 3.5mm; border-right: 0.5pt solid #000; line-height: 1.5; font-size: 8pt; }
+  .pi-words { margin-bottom: 2mm; font-style: italic; font-size: 8pt; }
+  .pi-bank { font-size: 7.5pt; color: #333; margin-top: 2mm; }
+  .pi-totals { width: 55mm; padding: 2.5mm 3mm; }
+  .pi-totals div { display: flex; justify-content: space-between; padding: 0.8mm 0; border-bottom: 0.5pt dotted #ddd; font-size: 8.5pt; }
+  .pi-totals div span:last-child { text-align: right; min-width: 18mm; }
+  .pi-grand { font-weight: bold; font-size: 10pt !important; border-top: 1pt solid #000 !important; border-bottom: none !important; padding-top: 1.5mm !important; }
 
   /* GST summary */
-  .pi-gst { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
-  .pi-gst th { background: #eee; color: #000; padding: 3px 5px; font-size: 9px; border: 1px solid #aaa; text-align: center; }
-  .pi-gst td { padding: 3px 5px; font-size: 9.5px; border: 1px solid #ccc; }
+  .pi-gst { width: 100%; border-collapse: collapse; border-bottom: 0.5pt solid #000; }
+  .pi-gst th { background: #eee; color: #000; padding: 1.5mm 2mm; font-size: 7.5pt; border: 0.5pt solid #aaa; text-align: center; }
+  .pi-gst td { padding: 1.5mm 2mm; font-size: 8pt; border: 0.5pt solid #ccc; }
   .pi-gst tfoot td { background: #f5f5f5; font-weight: bold; }
 
   /* Footer */
-  .pi-footer { display: flex; justify-content: space-between; align-items: flex-end; padding: 8px 10px 6px; }
-  .pi-footer-note { font-size: 8px; color: #666; text-align: center; align-self: flex-end; }
-  .pi-sig-line { width: 120px; border-bottom: 1px solid #000; height: 24px; margin: 2px 0; }
-  .pi-footer-left, .pi-footer-right { font-size: 9.5px; text-align: center; }
+  .pi-footer { display: flex; justify-content: space-between; align-items: flex-end; padding: 3mm 4mm 2.5mm; }
+  .pi-footer-note { font-size: 7pt; color: #666; text-align: center; align-self: flex-end; }
+  .pi-sig-line { width: 30mm; border-bottom: 0.5pt solid #000; height: 7mm; margin: 1mm 0; }
+  .pi-footer-left, .pi-footer-right { font-size: 8pt; text-align: center; }
 
   @media print { body { margin: 0; } }
 `;
