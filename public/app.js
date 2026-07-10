@@ -718,7 +718,7 @@ const BILL_CSS = `
   .pi-items { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; }
   .pi-items th { background: #000; color: #fff; padding: 3px 5px; font-size: 9px; text-align: left; border-right: 1px solid #555; }
   .pi-items th:last-child { border-right: none; }
-  .pi-items td { padding: 3px 5px; border-bottom: 1px solid #ddd; border-right: 1px solid #eee; font-size: 9.5px; line-height: 1.3; }
+  .pi-items td { padding: 3px 5px; border-bottom: 1px solid #aaa; border-right: 1px solid #ccc; font-size: 9.5px; line-height: 1.3; }
   .pi-items td:last-child { border-right: none; }
   .pi-items tfoot td { border-top: 1.5px solid #000; border-bottom: none; background: #f5f5f5; }
   .pi-items-spacer td { height: 10px; border: none !important; }
